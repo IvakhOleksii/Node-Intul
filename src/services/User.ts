@@ -48,6 +48,7 @@ export const isExistUser = async (email: string) => {
         }
         return false;
     } catch (error) {
+        console.log(error);
         return true;
     }
 }
@@ -69,6 +70,7 @@ export const login = async (email: string, password: string) => {
         }
         return { result: false, error: 'wrong credential' };
     } catch (error) {
+        console.log(error);
         return { result: false, error };
     }
 };
