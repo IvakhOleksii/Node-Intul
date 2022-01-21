@@ -1,0 +1,72 @@
+{
+	"info": {
+		"_postman_id": "ab4a0a4c-b4a9-4436-b84c-c9b634af9b86",
+		"name": "Auth",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Login",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://45.77.69.204:5000/login?email=donnie@aerovision.io&password=123456",
+					"protocol": "http",
+					"host": [
+						"45",
+						"77",
+						"69",
+						"204"
+					],
+					"port": "5000",
+					"path": [
+						"login"
+					],
+					"query": [
+						{
+							"key": "email",
+							"value": "donnie@aerovision.io"
+						},
+						{
+							"key": "password",
+							"value": "123456"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Register",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"firstname\": \"test\",\r\n    \"lastname\": \"test\",\r\n    \"email\": \"donnie@aerovision.io\",\r\n    \"password\": \"123456\",\r\n    \"type\": \"hiring\",\r\n    \"city\": \"aaa\",\r\n    \"state\": \"bbb\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://45.77.69.204:5000/register",
+					"protocol": "http",
+					"host": [
+						"45",
+						"77",
+						"69",
+						"204"
+					],
+					"port": "5000",
+					"path": [
+						"register"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
