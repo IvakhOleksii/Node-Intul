@@ -1,6 +1,6 @@
 import { User } from "../types/User";
 import { BigQueryService } from "./BigQueryService";
-import { DATASET_ID, Tables } from "../types/Common";
+import { DATASET_MAIN, Tables } from "../types/Common";
 
 export const register = async (data: User) => {
     try {
@@ -15,7 +15,7 @@ export const register = async (data: User) => {
         }
 
         const query = `
-            INSERT INTO \`${DATASET_ID}.${Tables.USER}\` (firstname, lastname, email, password, type, city, state)
+            INSERT INTO \`${DATASET_MAIN}.${Tables.USER}\` (firstname, lastname, email, password, type, city, state)
             VALUES ("${firstname}", "${lastname}", "${email}", "${password}", "${type}", "${city}", "${state}")
         `;
         const options = {
@@ -34,7 +34,7 @@ export const register = async (data: User) => {
 export const isExistUser = async (email: string) => {
     try {
         const query = `
-            SELECT * FROM \`${DATASET_ID}.${Tables.USER}\`
+            SELECT * FROM \`${DATASET_MAIN}.${Tables.USER}\`
             WHERE email='${email}'
         `;
         const options = {
@@ -56,7 +56,7 @@ export const isExistUser = async (email: string) => {
 export const login = async (email: string, password: string) => {
     try {
         const query = `
-            SELECT * FROM \`${DATASET_ID}.${Tables.USER}\`
+            SELECT * FROM \`${DATASET_MAIN}.${Tables.USER}\`
             WHERE email='${email}' AND password='${password}'
         `;
         const options = {

@@ -1,0 +1,20 @@
+import { Controller, Param, Body, Get, Post, Put, Delete, QueryParam } from 'routing-controllers';
+import { BullhornService } from '../services/BullhornService';
+
+@Controller()
+export class BullhornController {
+  @Get('/bullhorn/companies')
+  async getCompanies() {
+    return await (await BullhornService.getClient()).getCompanies();
+  }
+
+  @Get('/bullhorn/jobs')
+  async getJobs() {
+    return await (await BullhornService.getClient()).getJobs();
+  }
+
+  @Get('/bullhorn/clientContacts')
+  async getClientContacts() {
+    return await (await BullhornService.getClient()).getClientContacts();
+  }
+}

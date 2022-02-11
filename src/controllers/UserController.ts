@@ -18,7 +18,7 @@ export class UserController {
     }
     return { result, error };
   }
-
+ 
   @Post('/register')
   async register(@Body() user: any) {
     const {result, error} = await register(user);
