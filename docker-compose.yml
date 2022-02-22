@@ -5,8 +5,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: inTulsa_backend
-    container_name: inTulsa_backend
+    image: intulsa_backend
+    container_name: ingulsa_backend
     volumes:
       - '/usr/src/inTulsa-be'
       - '/usr/src/inTulsa-be/node_modules'

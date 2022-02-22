@@ -32,4 +32,4 @@ jobs:
         run: rsync -avz ./ ubuntu@${{ secrets.SSH_HOST }}:/opt/intulsa
 
       - name: Run Docker Compose
-        run: ssh ubuntu@${{ secrets.SSH_HOST }} 'cd /opt/intulsa; docker-compose up --detach --build'
+        run: ssh ubuntu@${{ secrets.SSH_HOST }} 'cd /opt/intulsa && docker-compose down && docker system prune --force --volumes && docker-compose up --detach --build'
