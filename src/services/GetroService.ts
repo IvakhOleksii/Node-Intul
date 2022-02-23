@@ -1,7 +1,7 @@
 import axios from 'axios';
 import config from "../config";
 import queryString from 'query-string';
-import { saveCompanies, saveMembers } from './GetroCrud';
+import { getCompanies, saveCompanies, saveJobs, saveMembers } from '../utils/GetroCrud';
 
 export class GetroService {
     public static client: GetroService | null = null;
@@ -53,35 +53,41 @@ export class GetroService {
         return false;
     };
     
-    async getCompanies(page=1, per_page=30): Promise<any> {
+    async getCompanies(testMode = false, per_page=30): Promise<any> {
         console.log('\n***** getCompanies *****');
-        try {
-            await this.checkAuth();
-            const query = queryString.stringify({
-                per_page,
-                page,
-                detailed: true
-            });
-            const url = `${this.api_base_url_v1}/collections/${this.networkId}/organizations?${query}`;
-            const res = await axios.get(url, this.getOptions());
-            if (res.status === 200) {
-                const result = [];
-                const { items, meta: { total } } = res.data;
-                for (const company of items) {
-                    const detail = await this.getCompanyDetail(company.slug);
-                    if (detail) {
-                        result.push(detail);
+        let page = 1;
+        let repeatErr = 0;
+
+        while (repeatErr < 5) {
+            try {
+                await this.checkAuth();
+                const query = queryString.stringify({
+                    per_page,
+                    page,
+                    detailed: true
+                });
+                const url = `${this.api_base_url_v1}/collections/${this.networkId}/organizations?${query}`;
+                const res = await axios.get(url, this.getOptions());
+                if (res.status === 200) {
+                    const result = [];
+                    const { items, meta: { total: total } } = res.data;
+                    if (!testMode) {
+                        for (const company of items) {
+                            const detail = await this.getCompanyDetail(company.slug);
+                            if (detail) {
+                                result.push(detail);
+                            }
+                        }
+                        await saveCompanies(result);
                     }
+                    console.log(`${total} / ${(page-1)*per_page+items.length}`);
+                    page++;
+                    repeatErr = 0;
+                    if (items.length < per_page) break;
                 }
-                await saveCompanies(result);
-                return {
-                    items: result,
-                    hasMore: items.length === total
-                };
+            } catch(error) {
+                repeatErr++;
             }
-            return { error: 'not found' };
-        } catch(error) {
-            return {error};
         }
     }
     
@@ -97,6 +103,7 @@ export class GetroService {
             const data = res.data;
             return {
                 ...data,
+                id: `gt-${data.id}`,
                 collections: data.collections?.map((col: any) => col.id).join(',') || null,
                 locations: data.locations?.map((loc: any) => loc.name).join(',') || null,
                 network_id: this.networkId,
@@ -108,36 +115,42 @@ export class GetroService {
     /**
      * getMemebers
      */
-    async getMembers(page=1, per_page=30): Promise<any> {
+    async getMembers(testMode = false, per_page=30): Promise<any> {
         console.log('\n***** getMembers *****');
-        try {
-            await this.checkAuth();
-            const query = queryString.stringify({
-                per_page,
-                page,
-                collection_id: this.networkId,
-                'roles[]': 'none'
-            });
-            const url = `${this.api_base_url_v1}/members?${query}`;
-            const res = await axios.get(url, this.getOptions());
-            if (res.status === 200) {
-                const result = [];
-                const { items, meta: { total } } = res.data;
-                for (const company of items) {
-                    const detail = await this.getMemberDetail(company.id);
-                    if (detail) {
-                        result.push(detail);
+        let page = 1;
+        let repeatErr = 0;
+
+        while (repeatErr < 5) {
+            try {
+                await this.checkAuth();
+                const query = queryString.stringify({
+                    per_page,
+                    page,
+                    collection_id: this.networkId,
+                    'roles[]': 'none'
+                });
+                const url = `${this.api_base_url_v1}/members?${query}`;
+                const res = await axios.get(url, this.getOptions());
+                if (res.status === 200) {
+                    const result = [];
+                    const { items, meta: { total } } = res.data;
+                    if (!testMode) {
+                        for (const company of items) {
+                            const detail = await this.getMemberDetail(company.id);
+                            if (detail) {
+                                result.push(detail);
+                            }
+                        }
+                        await saveMembers(result);
                     }
+                    console.log(`${total} / ${(page-1)*per_page+items.length}`);
+                    page++;
+                    repeatErr = 0;
+                    if (items.length < per_page) break;
                 }
-                await saveMembers(result);
-                return {
-                    items: result,
-                    hasMore: items.length === total
-                };
+            } catch(error) {
+                repeatErr++;
             }
-            return { error: 'not found' };
-        } catch(error) {
-            return {error};
         }
     }
     
@@ -152,6 +165,7 @@ export class GetroService {
             const data = res.data;
             return {
                 ...data,
+                id: `gt-${data.id}`,
                 talent_groups: data.talent_groups?.map((talent: any) => talent.id).join(',') || null,
                 skills: data.skills?.map((skill: any) => skill.name).join(',') || null,
                 locations: data.locations?.map((location: any) => location.name).join(',') || null,
@@ -161,5 +175,67 @@ export class GetroService {
             };
         }
         return null;
+    }
+
+    async getJobs(testMode = false, per_page=30): Promise<any> {
+        console.log(`\n***** getJobs *****`);
+        const companies: any[] = await getCompanies();
+        if (companies.length === 0) {
+            return {
+                error: 'no company on db'
+            };
+        }
+        try {
+            await this.checkAuth();
+            for (const company of companies[0]) {
+                console.log(`\n***** fetching jobs for company ${company.id} *****`);
+                const company_id = company.id.slice(3);
+                let page = 1;
+                let repeatErr = 0;
+                while (repeatErr < 5) {
+                    const query = queryString.stringify({
+                        per_page,
+                        page,
+                        collection_id: this.networkId,
+                        'organization_ids[]': company_id,
+                        'status[]': 'active'
+                    });
+                    const url = `${this.api_base_url_v1}/jobs?${query}`;
+                    try {
+                        const res = await axios.get(url, this.getOptions());
+                        const { items, meta: { total } } = res.data;
+                        if (!testMode) {
+                            const newItems  =items.map((item:any) => ({
+                                ...item,
+                                id: `gt-${item.id}`,
+                                job_functions: item.job_functions?.map((jf: any) => jf.name).join(','),
+                                locations: item.locations?.map((loc: any) => loc.name).join(','),
+                                organization_doman: item.organization?.domain,
+                                organization_id: item.organization?.id,
+                                organization_logo_url: item.organization?.logo_url,
+                                organization_name: item.organization?.name,
+                                organization_slug: item.organization?.slug,
+                            }))
+                            for (const job of newItems) {
+                                await saveJobs([job]);
+                            }
+                        }
+                        console.log(page);
+                        if (per_page === items.length) {
+                            console.log(`${total} / ${(page-1)*per_page+items.length}`);
+                            page++;
+                            repeatErr = -0;
+                        } else {
+                            break;
+                        }
+                    } catch (error) {
+                        console.log(url);
+                        repeatErr++;
+                    }
+                }
+            }
+        } catch(error) {
+            console.log(error);
+        }
     }
 }

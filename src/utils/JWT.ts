@@ -1,9 +1,10 @@
 import jwt from 'jsonwebtoken';
+import config from '../config';
 
 export const CreateJwtToken = (email: string) => {
     const token = jwt.sign(
       {email},
-      process.env.AUTH_SECRET || 'inTulsa',
+      config.authSecret || 'inTulsa',
       { expiresIn: 2 * 3600 }
     );
     return token;

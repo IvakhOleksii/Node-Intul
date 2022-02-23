@@ -11,7 +11,7 @@ RUN npm install
 
 RUN apk del native-deps
 
-RUN npm run build-deploy
+RUN npm run build
 
 EXPOSE 5000
 

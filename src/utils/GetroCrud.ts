@@ -1,29 +1,7 @@
 import { User } from "../types/User";
-import { BigQueryService } from "./BigQueryService";
+import { BigQueryService } from "../services/BigQueryService";
 import { DATASET_GETRO, Tables } from "../types/Common";
-
-export const isExist = async (id: string, datset: string, table: string) => {
-    try {
-        const query = `
-            SELECT * FROM \`${datset}.${table}\`
-            WHERE id=${id}
-        `;
-        const options = {
-            query: query,
-            location: 'US',
-        };
-        console.log(query)
-        const [job] = await BigQueryService.getClient().createQueryJob(options);
-        const [res] = await job.getQueryResults();
-        if (res && res.length > 0 && res[0].id === id) {
-            return true;
-        }
-        return false;
-    } catch (error) {
-        console.log(error);
-        return true;
-    }
-}
+import { isExistByID } from "./";
 
 export const saveCompanies = async (companies: any[]) => {
     const expludeFields = ['organization_careers_pages', 'managers', 'topics'];
@@ -31,7 +9,7 @@ export const saveCompanies = async (companies: any[]) => {
         for (const company of companies) {
             try {
                 console.log(`Savng Getro company with ID = ${company.id}`);
-                const existing = await isExist(`'${company.id}'`, DATASET_GETRO, Tables.COMPANIES);
+                const existing = await isExistByID(`'${company.id}'`, DATASET_GETRO, Tables.COMPANIES);
                 if (existing) {
                     console.log(`Company with ID: ${company.id} exists`);
                     continue;
@@ -71,7 +49,7 @@ export const saveMembers = async (members: any[]) => {
         for (const member of members) {
             try {
                 console.log(`Savng Getro Member with ID = ${member.id}`);
-                const existing = await isExist(`'${member.id}'`, DATASET_GETRO, Tables.USER);
+                const existing = await isExistByID(`'${member.id}'`, DATASET_GETRO, Tables.USER);
                 if (existing) {
                     console.log(`Member with ID: ${member.id} exists`);
                     continue;
@@ -95,6 +73,58 @@ export const saveMembers = async (members: any[]) => {
             } catch (error) {
                 console.log(error);
                 console.log(`ERROR: while saving Member with ID = ${member.id}`);
+            }
+        };
+
+        return { result: true };
+    } catch (error) {
+        console.log(error);
+        return { result: false, error };
+    }
+}
+
+export const getCompanies = async () => {
+    const query = `SELECT id from ${DATASET_GETRO}.${Tables.COMPANIES}`;
+    const options = {
+        query,
+        location: 'US'
+    };
+    const [job] = await BigQueryService.getClient().createQueryJob(options);
+    const result = await job.getQueryResults();
+    console.log(result);
+    return result;
+}
+
+export const saveJobs = async (jobs: any[]) => {
+    const expludeFields = ['organization', 'employment_types'];
+    try {
+        for (const job of jobs) {
+            try {
+                console.log(`Savng Getro Job with ID = ${job.id}`);
+                const existing = await isExistByID(`'${job.id}'`, DATASET_GETRO, Tables.JOBS);
+                if (existing) {
+                    console.log(`Job with ID: ${job.id} exists`);
+                    continue;
+                }
+                const keys: string[] = Object.keys(job).filter(k => expludeFields.indexOf(k) === -1 && !!job[k]);
+                const values: any = keys.map(k => 
+                    `"${job[k]}"`
+                );
+                const query = `
+                    INSERT INTO \`${DATASET_GETRO}.${Tables.JOBS}\` (${keys.join(', ')})
+                    VALUES (${values.join(', ')})
+                `;
+                console.log(query);
+                const options = {
+                    query: query,
+                    location: 'US',
+                };
+                const [jobBg] = await BigQueryService.getClient().createQueryJob(options);
+                await jobBg.getQueryResults();
+                console.log(`Saved Getro Job with ID = ${job.id} successfully`);
+            } catch (error) {
+                console.log(error);
+                console.log(`ERROR: while saving Job with ID = ${job.id}`);
             }
         };
 
