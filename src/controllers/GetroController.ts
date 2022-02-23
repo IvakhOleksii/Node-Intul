@@ -12,4 +12,9 @@ export class GetroController {
   async getMembers() {
     return await (await GetroService.getClient()).getMembers();    
   }
+  
+  @Get('/getro/jobs')
+  async getJobs() {
+    return await (await GetroService.getClient()).getJobs();    
+  }
 }
