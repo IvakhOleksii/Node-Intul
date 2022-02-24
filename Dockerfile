@@ -5,8 +5,6 @@ COPY package-lock.json /usr/src/inTulsa-be
 
 WORKDIR /usr/src/inTulsa-be
 
-ENV GOOGLE_APPLICATION_CREDENTIALS=/opt/intulsa/src/config/service-account-file.json
-
 RUN apk update && apk --no-cache add --virtual native-deps g++ make cmake python3
     
 RUN npm install

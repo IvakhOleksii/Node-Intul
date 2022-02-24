@@ -18,13 +18,22 @@
   },
   "scripts": {
     "dev": "nodemon src/app.ts",
-    "build": "tsc",
+    "build": "export GOOGLE_APPLICATION_CREDENTIALS=/opt/intulsa/src/config/service-account-file.json && tsc",
+    "build-win" : "tsc",
+    
     "bullhorn_get_companies": "npm run build && node ./dist/cronjobs/bullhorn_get_companies",
     "bullhorn_get_jobs": "npm run build && node ./dist/cronjobs/bullhorn_get_jobs",
     "bullhorn_get_clientcontacts": "npm run build && node ./dist/cronjobs/bullhorn_get_clientcontacts",
     "getro_get_companies": "npm run build && node ./dist/cronjobs/getro_get_companies",
     "getro_get_jobs": "npm run build && node ./dist/cronjobs/getro_get_jobs",
-    "getro_get_members": "npm run build && node ./dist/cronjobs/getro_get_members"
+    "getro_get_members": "npm run build && node ./dist/cronjobs/getro_get_members",
+
+    "bullhorn_get_companies_win": "npm run build-win && node ./dist/cronjobs/bullhorn_get_companies",
+    "bullhorn_get_jobs_win": "npm run build-win && node ./dist/cronjobs/bullhorn_get_jobs",
+    "bullhorn_get_clientcontacts_win": "npm run build-win && node ./dist/cronjobs/bullhorn_get_clientcontacts",
+    "getro_get_companies_win": "npm run build-win && node ./dist/cronjobs/getro_get_companies",
+    "getro_get_jobs_win": "npm run build-win && node ./dist/cronjobs/getro_get_jobs",
+    "getro_get_members_win": "npm run build-win && node ./dist/cronjobs/getro_get_members"
   },
   "devDependencies": {
     "@google-cloud/bigquery": "^5.10.0",
