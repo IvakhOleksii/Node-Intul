@@ -14,3 +14,4 @@ services:
       - 5000:5000
     environment:
       - CHOKIDAR_USEPOLLING=true
+      - GOOGLE_APPLICATION_CREDENTIALS=/opt/intulsa/src/config/service-account-file.json
