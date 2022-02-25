@@ -17,8 +17,8 @@
     "uuid": "^8.3.2"
   },
   "scripts": {
-    "dev": "nodemon src/app.ts",
-    "build": "export GOOGLE_APPLICATION_CREDENTIALS=/opt/intulsa/src/config/service-account-file.json && tsc",
+    "dev": "export GOOGLE_APPLICATION_CREDENTIALS='./src/config/service-account-file.json' && nodemon src/app.ts",
+    "build": "export GOOGLE_APPLICATION_CREDENTIALS='./src/config/service-account-file.json' && tsc",
     "build-win" : "tsc",
     
     "bullhorn_get_companies": "npm run build && node ./dist/cronjobs/bullhorn_get_companies",
