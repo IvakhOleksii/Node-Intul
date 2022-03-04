@@ -137,3 +137,46 @@ export const saveClientContacts = async (contacts: any[]) => {
         return { result: false, error };
     }
 }
+
+export const saveCandidates = async (candidates: any[]) => {
+    const expludeFields = [
+        'address',
+        'description',
+        '_score'
+    ];
+    try {
+        for (const candidate of candidates) {
+            try {
+                console.log(`Savng job with ID = ${candidate.id}`);
+                const existing = await isExistByID(`'${candidate.id}'`, DATASET_BULLHORN, Tables.CANDIDATES);
+                if (existing) {
+                    console.log(`Candidate with ID: ${candidate.id} exists`);
+                    continue;
+                }
+                console.log('------')
+                const keys: string[] = Object.keys(candidate).filter(k => expludeFields.indexOf(k) === -1 && !!candidate[k]);
+                const values: any = keys.map(k => `'${candidate[k]}'`);
+                const query = `
+                    INSERT INTO \`${DATASET_BULLHORN}.${Tables.CANDIDATES}\` (${keys.join(', ')})
+                    VALUES (${values.join(', ')})
+                `;
+                console.log(query);
+                const options = {
+                    query: query,
+                    location: 'US',
+                };
+                const [bgJob] = await BigQueryService.getClient().createQueryJob(options);
+                await bgJob.getQueryResults();
+                console.log(`Saved Candidate with ID = ${candidate.id} successfully`);
+            } catch (error) {
+                console.log(error);
+                console.log(`ERROR: while saving Candidate with ID = ${candidate.id}`);
+            }
+        };
+
+        return { result: true };
+    } catch (error) {
+        console.log(error);
+        return { result: false, error };
+    }
+}

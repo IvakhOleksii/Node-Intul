@@ -18,6 +18,7 @@
   },
   "scripts": {
     "dev": "export GOOGLE_APPLICATION_CREDENTIALS='./src/config/service-account-file.json' && nodemon src/app.ts",
+    "dev-win": "nodemon src/app.ts",
     "build": "export GOOGLE_APPLICATION_CREDENTIALS='./src/config/service-account-file.json' && tsc",
     "build-win" : "tsc",
     

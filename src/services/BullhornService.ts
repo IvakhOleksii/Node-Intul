@@ -1,7 +1,7 @@
 import axios from "axios";
 import config from "../config";
 import queryString from 'query-string';
-import { saveClientContacts, saveCompanies, saveJobs } from "../utils/BullhornCrud";
+import { saveCandidates, saveClientContacts, saveCompanies, saveJobs } from "../utils/BullhornCrud";
 import fs from 'fs';
 
 export class BullhornService {
@@ -489,6 +489,161 @@ export class BullhornService {
                     }));
                     if (!testMode) {
                         await saveClientContacts(updatedData);
+                    }
+                    offset += count;
+                    repeatErr = 0;
+                    if (total <= offset) break;
+                } else if (res.status === 404) {
+                    return [];
+                } else {
+                    console.log(url);
+                    throw "error";
+                }
+            } catch (error) {
+                await this.getNewAccessToken();
+                repeatErr++;
+            }
+        }
+    }
+
+    async getCandidates(testMode = false, count=50, sort='-dateAdded'): Promise<any> {
+        console.log('\n***** getCandidates *****');
+        let offset = 0;
+        let total = 100000;
+        let repeatErr = 0;
+
+        while (offset < total || repeatErr < 5) {
+            console.log(`\nBullhorn_GET_CANDIDATES: ${total} / ${offset}`);
+            try {
+                const query = queryString.stringify({
+                    BhRestToken: this.BhRestToken,
+                    fields: [
+                        'id',
+                        'address',
+                        'certifications',
+                        'comments',
+                        'companyName',
+                        'companyURL',
+                        'dateAdded',
+                        'dateAvailable',
+                        'dateAvailableEnd',
+                        'dateI9Expiration',
+                        'dateLastComment',
+                        'dateLastModified',
+                        'dateNextCall',
+                        'dateOfBirth',
+                        'dayRate',
+                        'dayRateLow',
+                        'degreeList',
+                        'description',
+                        'desiredLocations',
+                        'disability',
+                        'educationDegree',
+                        'email',
+                        'email2',
+                        'email3',
+                        'employeeType',
+                        'employmentPreference',
+                        'experience',
+                        'externalID',
+                        'fax',
+                        'fax2',
+                        'fax3',
+                        'firstName',
+                        'gender',
+                        'hourlyRate',
+                        'hourlyRateLow',
+                        'i9OnFile',
+                        'isAnonymized',
+                        'isDeleted',
+                        'isEditable',
+                        'isExempt',
+                        'lastName',
+                        'leads',
+                        'maritalStatus',
+                        'massMailOptOut',
+                        'middleName',
+                        'mobile',
+                        'name',
+                        'namePrefix',
+                        'nameSuffix',
+                        'nickName',
+                        'numCategories',
+                        'numOwners',
+                        'occupation',
+                        'otherDeductionsAmount',
+                        'otherIncomeAmount',
+                        'pager',
+                        'paperWorkOnFile',
+                        'password',
+                        'payrollClientStartDate',
+                        'payrollStatus',
+                        'phone',
+                        'phone2',
+                        'phone3',
+                        'preferredContact',
+                        'primarySkills',
+                        'recentClientList',
+                        'referredBy',
+                        'salary',
+                        'salaryLow',
+                        'secondarySkills',
+                        'skillSet',
+                        'smsOptIn',
+                        'source',
+                        'specialties',
+                        'ssn',
+                        'stateAddtionalWitholdingsAmount',
+                        'stateExemptions',
+                        'stateFilingStatus',
+                        'status',
+                        'taxID',
+                        'taxState',
+                        'timeZoneOffsetEST',
+                        'tobaccoUser',
+                        'totalDependentClaimAmount',
+                        'travelLimit',
+                        'travelMethod',
+                        'twoJobs',
+                        'type',
+                        'userDateAdded',
+                        'username',
+                        'veteran',
+                        'willRelocate',
+                        'workAuthorized',
+                    ].join(','),
+                    query: 'isDeleted:0  AND NOT status:Archive',
+                    start: offset,
+                    count,
+                    sort
+                });
+                const url = `${this.restUrl}search/Candidate?${query}`;
+                console.log(url);
+                const res = await axios.get(url, {
+                    headers: {
+                        'Content-Type': 'application/json;charset=UTF-8',
+                        'Accept': '*/*'
+                    }
+                });
+                if (res.status === 200) {
+                    const {data} = res.data;
+                    total = res.data.total;
+                    const updatedData = data.map((d: any) => ({
+                        ...d,
+                        id: `bl-${d.id}`,
+                        address_address1: d.address?.address1 || null,
+                        address_address2: d.address?.address2 || null,
+                        address_city: d.address?.city || null,
+                        address_state: d.address?.state || null,
+                        address_zip: d.address?.zip || null,
+                        address_country_id: d.address?.countryID || null,
+                        leads: d.leads?.data.map((lead: any) => lead.id).join(', '),
+                        primarySkills: d.primarySkills?.data.map((skill: any) => skill.name).join(', '),
+                        secondarySkills: d.secondarySkills?.data.map((skill: any) => skill.name).join(', '),
+                        specialties: d.specialties?.data.map((specialty: any) => specialty.name).join(', '),
+                    }));
+                    if (!testMode) {
+                        await saveCandidates(updatedData);
                     }
                     offset += count;
                     repeatErr = 0;

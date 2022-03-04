@@ -182,7 +182,7 @@ export type Candidate = {
     dateAvailableEnd?: string;
     dateI9Expiration?: string;
     dateLastComment?: string;
-    dateLastModified?: string;	
+    dateLastModified?: string;
     dateNextCall?: string;
     dateOfBirth?: string;
     dayRate?: string;
@@ -203,10 +203,6 @@ export type Candidate = {
     fax?: string;
     fax2?: string;
     fax3?: string;
-    federalAdditionalWitholdingsAmount?: string;
-    federalExemptions?: string;
-    federalExtraWithholdingAmount?: string;
-    federalFilingStatus?: string;
     firstName?: string;
     gender?: string;
     hourlyRate?: string;
@@ -217,10 +213,7 @@ export type Candidate = {
     isEditable?: string;
     isExempt?: string;
     lastName?: string;
-    localAddtionalWitholdingsAmount?: string;
-    localExemptions?: string;
-    localFilingStatus?: string;
-    localTaxCode?: string;
+    leads?: string;
     maritalStatus?: string;
     massMailOptOut?: string;
     middleName?: string;
@@ -232,10 +225,6 @@ export type Candidate = {
     numCategories?: string;
     numOwners?: string;
     occupation?: string;
-    onboardingDocumentReceivedCount?: string;
-    onboardingDocumentSentCount?: string;
-    onboardingPercentComplete?: string;
-    onboardingStatus?: string;
     otherDeductionsAmount?: string;
     otherIncomeAmount?: string;
     pager?: string;
