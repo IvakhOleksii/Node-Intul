@@ -3,6 +3,7 @@ import config from "../config";
 import queryString from 'query-string';
 import { saveCandidates, saveClientContacts, saveCompanies, saveJobs } from "../utils/BullhornCrud";
 import fs from 'fs';
+import { checkForJobFilter } from "../utils";
 
 export class BullhornService {
     public static client: BullhornService | null = null;
@@ -334,7 +335,7 @@ export class BullhornService {
                         'willRelocate',
                         'yearsRequired',
                     ].join(','),
-                    query: 'isDeleted: 0 AND NOT status:Archive',
+                    query: 'isDeleted: 0',
                     start: offset,
                     count,
                     sort
@@ -380,7 +381,14 @@ export class BullhornService {
                         date_last_published: d.dateLastPublished,
                     }));
                     if (!testMode) {
-                        await saveJobs(updatedData);
+                        for (const job of updatedData) {
+                            console.log(job.address_state, job.title, job.address_city);
+                            if (job.address_state && job.title && job.address_city && job.address_state.match(/ok/gi) && checkForJobFilter(job.title, `${job.address_city}, OK`)) {
+                                await saveJobs([job]);
+                            } else {
+                                console.log('JOB doesn\'t meet the qualification! Skipping...')
+                            }
+                        }
                     }
                     if (total <= offset) break;
                     offset += count;
@@ -392,6 +400,7 @@ export class BullhornService {
                     throw "error";
                 }
             } catch (error) {
+                console.log(error);
                 await this.getNewAccessToken();
                 repeatErr++;
             }
@@ -483,9 +492,9 @@ export class BullhornService {
                         address_country_id: d.address?.countryID || null,
                         category: `${d.category?.id}-${d.category?.name}`,
                         clientCorporation: `${d.clientCorporation?.id}`,
-                        leads: d.leads?.data.map((lead: any) => lead.id).join(', '),
+                        leads: d.leads?.data.map((lead: any) => lead.id).join(' | '),
                         owner: `${d.owner?.id}`,
-                        skills: d.skills?.data.map((skill: any) => skill.id).join(', ')
+                        skills: d.skills?.data.map((skill: any) => skill.id).join(' | ')
                     }));
                     if (!testMode) {
                         await saveClientContacts(updatedData);
@@ -637,10 +646,10 @@ export class BullhornService {
                         address_state: d.address?.state || null,
                         address_zip: d.address?.zip || null,
                         address_country_id: d.address?.countryID || null,
-                        leads: d.leads?.data.map((lead: any) => lead.id).join(', '),
-                        primarySkills: d.primarySkills?.data.map((skill: any) => skill.name).join(', '),
-                        secondarySkills: d.secondarySkills?.data.map((skill: any) => skill.name).join(', '),
-                        specialties: d.specialties?.data.map((specialty: any) => specialty.name).join(', '),
+                        leads: d.leads?.data.map((lead: any) => lead.id).join(' | '),
+                        primarySkills: d.primarySkills?.data.map((skill: any) => skill.name).join(' | '),
+                        secondarySkills: d.secondarySkills?.data.map((skill: any) => skill.name).join(' | '),
+                        specialties: d.specialties?.data.map((specialty: any) => specialty.name).join(' | '),
                     }));
                     if (!testMode) {
                         await saveCandidates(updatedData);

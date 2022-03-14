@@ -2,6 +2,7 @@ import axios from 'axios';
 import config from "../config";
 import queryString from 'query-string';
 import { getCompanies, saveCompanies, saveJobs, saveMembers } from '../utils/GetroCrud';
+import { checkForJobFilter } from '../utils';
 
 export class GetroService {
     public static client: GetroService | null = null;
@@ -104,8 +105,8 @@ export class GetroService {
             return {
                 ...data,
                 id: `gt-${data.id}`,
-                collections: data.collections?.map((col: any) => col.id).join(',') || null,
-                locations: data.locations?.map((loc: any) => loc.name).join(',') || null,
+                collections: data.collections?.map((col: any) => col.id).join(' | ') || null,
+                locations: data.locations?.map((loc: any) => loc.name).join(' | ') || null,
                 network_id: this.networkId,
             };
         }
@@ -166,10 +167,10 @@ export class GetroService {
             return {
                 ...data,
                 id: `gt-${data.id}`,
-                talent_groups: data.talent_groups?.map((talent: any) => talent.id).join(',') || null,
-                skills: data.skills?.map((skill: any) => skill.name).join(',') || null,
-                locations: data.locations?.map((location: any) => location.name).join(',') || null,
-                employment_types: data.employment_types?.map((employment_type: string) => employment_type).join(',') || null,
+                talent_groups: data.talent_groups?.map((talent: any) => talent.id).join(' | ') || null,
+                skills: data.skills?.map((skill: any) => skill.name).join(' | ') || null,
+                locations: data.locations?.map((location: any) => location.name).join(' | ') || null,
+                employment_types: data.employment_types?.map((employment_type: string) => employment_type).join(' | ') || null,
                 current_location: data.current_location?.name || null,
                 network_id: this.networkId,
             };
@@ -187,8 +188,11 @@ export class GetroService {
         }
         try {
             await this.checkAuth();
+            let flag = false;
             for (const company of companies[0]) {
+                if (company.id === 'gt-23348') flag = true;
                 console.log(`\n***** fetching jobs for company ${company.id} *****`);
+                if (!flag) continue;
                 const company_id = company.id.slice(3);
                 let page = 1;
                 let repeatErr = 0;
@@ -208,8 +212,8 @@ export class GetroService {
                             const newItems  =items.map((item:any) => ({
                                 ...item,
                                 id: `gt-${item.id}`,
-                                job_functions: item.job_functions?.map((jf: any) => jf.name).join(','),
-                                locations: item.locations?.map((loc: any) => loc.name).join(','),
+                                job_functions: item.job_functions?.map((jf: any) => jf.name).join(' | '),
+                                locations: item.locations?.map((loc: any) => loc.name).join(' | '),
                                 organization_doman: item.organization?.domain,
                                 organization_id: item.organization?.id,
                                 organization_logo_url: item.organization?.logo_url,
@@ -217,7 +221,12 @@ export class GetroService {
                                 organization_slug: item.organization?.slug,
                             }))
                             for (const job of newItems) {
-                                await saveJobs([job]);
+                                console.log('Job: ', job.title, job.locations);
+                                if (checkForJobFilter(job.title, job.locations)) {
+                                    await saveJobs([job]);
+                                } else {
+                                    console.log('JOB doesn\'t meet the qualification! Skipping...')
+                                }
                             }
                         }
                         console.log(page);
@@ -229,6 +238,7 @@ export class GetroService {
                             break;
                         }
                     } catch (error) {
+                        console.log(error);
                         console.log(url);
                         repeatErr++;
                     }
