@@ -1,7 +1,7 @@
 import axios from "axios";
 import config from "../config";
 import queryString from 'query-string';
-import { saveCandidates, saveClientContacts, saveCompanies, saveJobs } from "../utils/BullhornCrud";
+import { saveCandidates, saveClientContacts, saveCompanies, saveJobs, saveLeads } from "../utils/BullhornCrud";
 import fs from 'fs';
 import { checkForJobFilter } from "../utils";
 
@@ -139,7 +139,6 @@ export class BullhornService {
             console.log(error);
             return await this.init();
         }
-        return false;
     }
 
     async login(): Promise<boolean> {
@@ -182,7 +181,7 @@ export class BullhornService {
         let total = 100000;
         let repeatErr = 0;
 
-        while (offset < total || repeatErr < 5) {
+        while (repeatErr < 5) {
             console.log(`\nBullhorn_GET_COMPANY: ${total} / ${offset}`);
             try {
                 const query = queryString.stringify({
@@ -262,6 +261,7 @@ export class BullhornService {
                     throw "error";
                 }
             } catch (error) {
+                console.log(error, 'repeatNumber =', repeatErr);
                 repeatErr++;
                 await this.getNewAccessToken();
             }
@@ -273,7 +273,7 @@ export class BullhornService {
         let total = 100000;
         let repeatErr = 0;
 
-        while (offset < total || repeatErr < 5) {
+        while (repeatErr < 5) {
             console.log(`\nBullhorn_GET_JOBS: ${total} / ${offset}`);
             try {
                 const query = queryString.stringify({
@@ -400,7 +400,7 @@ export class BullhornService {
                     throw "error";
                 }
             } catch (error) {
-                console.log(error);
+                console.log(error, 'repeatNumber =', repeatErr);
                 await this.getNewAccessToken();
                 repeatErr++;
             }
@@ -414,7 +414,7 @@ export class BullhornService {
         let total = 100000;
         let repeatErr = 0;
 
-        while (offset < total || repeatErr < 5) {
+        while (repeatErr < 5) {
             console.log(`\nBullhorn_GET_CLIENTCONTACTS: ${total} / ${offset}`);
             try {
                 const query = queryString.stringify({
@@ -509,6 +509,7 @@ export class BullhornService {
                     throw "error";
                 }
             } catch (error) {
+                console.log(error, 'repeatNumber =', repeatErr);
                 await this.getNewAccessToken();
                 repeatErr++;
             }
@@ -521,7 +522,7 @@ export class BullhornService {
         let total = 100000;
         let repeatErr = 0;
 
-        while (offset < total || repeatErr < 5) {
+        while (repeatErr < 5) {
             console.log(`\nBullhorn_GET_CANDIDATES: ${total} / ${offset}`);
             try {
                 const query = queryString.stringify({
@@ -664,6 +665,128 @@ export class BullhornService {
                     throw "error";
                 }
             } catch (error) {
+                console.log(error, 'repeatNumber =', repeatErr);
+                await this.getNewAccessToken();
+                repeatErr++;
+            }
+        }
+    }
+
+    async getLeads(testMode = false, count=50, sort='-dateAdded'): Promise<any> {
+        console.log('\n***** getLeads *****');
+        let offset = 0;
+        let total = 100000;
+        let repeatErr = 0;
+
+        while (repeatErr < 5) {
+            console.log(`\nBullhorn_GET_LEADS: ${total} / ${offset}`);
+            try {
+                const query = queryString.stringify({
+                    BhRestToken: this.BhRestToken,
+                    fields: [
+                        'id',
+                        'address',
+                        'campaignSource',
+                        'candidates',
+                        'category',
+                        'clientContacts',
+                        'clientCorporation',
+                        'comments',
+                        'companyName',
+                        'companyURL',
+                        'dateAdded',
+                        'dateLastComment',
+                        'dateLastModified',
+                        'description',
+                        'division',
+                        'email',
+                        'email2',
+                        'email3',
+                        'fax',
+                        'fax2',
+                        'fax3',
+                        'firstName',
+                        'isAnonymized',
+                        'isDeleted',
+                        'lastName',
+                        'leadSource',
+                        'massMailOptOut',
+                        'middleName',
+                        'mobile',
+                        'name',
+                        'namePrefix',
+                        'nameSuffix',
+                        'nickName',
+                        'notes',
+                        'numEmployees',
+                        'occupation',
+                        'owner',
+                        'pager',
+                        'phone',
+                        'phone2',
+                        'phone3',
+                        'preferredContact',
+                        'primarySkills',
+                        'priority',
+                        'referredByPerson',
+                        'reportToPerson',
+                        'role',
+                        'salary',
+                        'salaryLow',
+                        'secondarySkills',
+                        'skillSet',
+                        'smsOptIn',
+                        'specialties',
+                        'status',
+                        'timeZoneOffsetEST',
+                        'type',
+                        'willRelocate',
+                    ].join(','),
+                    query: 'isDeleted:0  AND NOT status:Archive',
+                    start: offset,
+                    count,
+                    sort
+                });
+                const url = `${this.restUrl}search/Lead?${query}`;
+                console.log(url);
+                const res = await axios.get(url, {
+                    headers: {
+                        'Content-Type': 'application/json;charset=UTF-8',
+                        'Accept': '*/*'
+                    }
+                });
+                if (res.status === 200) {
+                    const {data} = res.data;
+                    total = res.data.total;
+                    const updatedData = data.map((d: any) => ({
+                        ...d,
+                        id: `bl-${d.id}`,
+                        address_address1: d.address?.address1 || null,
+                        address_address2: d.address?.address2 || null,
+                        address_city: d.address?.city || null,
+                        address_state: d.address?.state || null,
+                        address_zip: d.address?.zip || null,
+                        address_country_id: d.address?.countryID || null,
+                        candidates: d.candidates?.data.map((candidate: any) => candidate.id).join(' | '),
+                        clientContacts: d.clientContacts?.data.map((clientContact: any) => clientContact.id).join(' | '),
+                        primarySkills: d.primarySkills?.data.map((skill: any) => skill.name).join(' | '),
+                        secondarySkills: d.secondarySkills?.data.map((skill: any) => skill.name).join(' | '),
+                        specialties: d.specialties?.data.map((specialty: any) => specialty.name).join(' | '),
+                    }));
+                    if (!testMode) {
+                        await saveLeads(updatedData);
+                    }
+                    offset += count;
+                    repeatErr = 0;
+                    if (total <= offset) break;
+                } else if (res.status === 404) {
+                    return [];
+                } else {
+                    console.log(url);
+                    throw "error";
+                }
+            } catch (error) {
+                console.log(error, 'repeatNumber =', repeatErr);
                 await this.getNewAccessToken();
                 repeatErr++;
             }

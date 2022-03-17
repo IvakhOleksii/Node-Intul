@@ -3,6 +3,7 @@
     "@google-cloud/bigquery-connection": "^1.5.1",
     "@types/cors": "^2.8.12",
     "@types/jsonwebtoken": "^8.5.8",
+    "@types/node-cron": "^3.0.1",
     "@types/uuid": "^8.3.4",
     "axios": "^0.25.0",
     "class-transformer": "^0.5.1",
@@ -10,6 +11,7 @@
     "express": "^4.17.2",
     "fs": "^0.0.1-security",
     "multer": "^1.4.4",
+    "node-cron": "^3.0.0",
     "query-string": "^7.1.0",
     "reflect-metadata": "^0.1.13",
     "routing-controllers": "^0.9.0",
@@ -20,18 +22,24 @@
     "dev": "export GOOGLE_APPLICATION_CREDENTIALS='./src/config/service-account-file.json' && nodemon src/app.ts",
     "dev-win": "nodemon src/app.ts",
     "build": "export GOOGLE_APPLICATION_CREDENTIALS='./src/config/service-account-file.json' && tsc",
-    "build-win" : "tsc",
-    
+    "build-win": "tsc",
+
     "bullhorn_get_companies": "npm run build && node ./dist/cronjobs/bullhorn_get_companies",
     "bullhorn_get_jobs": "npm run build && node ./dist/cronjobs/bullhorn_get_jobs",
-    "bullhorn_get_clientcontacts": "npm run build && node ./dist/cronjobs/bullhorn_get_clientcontacts",
+    "bullhorn_get_contacts": "npm run build && node ./dist/cronjobs/bullhorn_get_contacts",
+    "bullhorn_get_candidates": "npm run build && node ./dist/cronjobs/bullhorn_get_candidates",
+    "bullhorn_get_leads": "npm run build && node ./dist/cronjobs/bullhorn_get_leads",
+
     "getro_get_companies": "npm run build && node ./dist/cronjobs/getro_get_companies",
     "getro_get_jobs": "npm run build && node ./dist/cronjobs/getro_get_jobs",
     "getro_get_members": "npm run build && node ./dist/cronjobs/getro_get_members",
 
     "bullhorn_get_companies_win": "npm run build-win && node ./dist/cronjobs/bullhorn_get_companies",
     "bullhorn_get_jobs_win": "npm run build-win && node ./dist/cronjobs/bullhorn_get_jobs",
-    "bullhorn_get_clientcontacts_win": "npm run build-win && node ./dist/cronjobs/bullhorn_get_clientcontacts",
+    "bullhorn_get_contacts_win": "npm run build-win && node ./dist/cronjobs/bullhorn_get_contacts",
+    "bullhorn_get_candidates_win": "npm run build-win && node ./dist/cronjobs/bullhorn_get_candidates",
+    "bullhorn_get_leads_win": "npm run build-win && node ./dist/cronjobs/bullhorn_get_leads",
+    
     "getro_get_companies_win": "npm run build-win && node ./dist/cronjobs/getro_get_companies",
     "getro_get_jobs_win": "npm run build-win && node ./dist/cronjobs/getro_get_jobs",
     "getro_get_members_win": "npm run build-win && node ./dist/cronjobs/getro_get_members"

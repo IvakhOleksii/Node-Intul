@@ -120,6 +120,12 @@ export type Job = {
 
 export type ClientContact = {
     id: string;
+    address_address1?: string;
+    address_address2?: string;
+    address_city?: string;
+    address_state?: string;
+    address_zip?: string;
+    address_country_id?: string;
     category?: string;
     certifications?: string;
     clientCorporation?: string;
@@ -270,7 +276,12 @@ export type Candidate = {
 
 export type Lead = {
     id: string;
-    address?: string;
+    address_address1?: string;
+    address_address2?: string;
+    address_city?: string;
+    address_state?: string;
+    address_zip?: string;
+    address_country_id?: string;
     campaignSource?: string;
     candidates?: string;
     category?: string;

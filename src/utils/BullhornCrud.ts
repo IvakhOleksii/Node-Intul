@@ -46,7 +46,6 @@ export const saveJobs = async (jobs: any[]) => {
         'address',
         'location',
         '_score',
-        'description', //
         'publicDescription', //
         'clientCorporation',
         'dateAdded',
@@ -99,13 +98,12 @@ export const saveClientContacts = async (contacts: any[]) => {
         'address',
         'location',
         '_score',
-        'description', //
     ];
     try {
         for (const contact of contacts) {
             try {
-                console.log(`Savng job with ID = ${contact.id}`);
-                const existing = await isExistByID(`'${contact.id}'`, DATASET_BULLHORN, Tables.USER);
+                console.log(`Savng ClientContact with ID = ${contact.id}`);
+                const existing = await isExistByID(`'${contact.id}'`, DATASET_BULLHORN, Tables.CONTACTS);
                 if (existing) {
                     console.log(`ClientContact with ID: ${contact.id} exists`);
                     continue;
@@ -114,7 +112,7 @@ export const saveClientContacts = async (contacts: any[]) => {
                 const keys: string[] = Object.keys(contact).filter(k => expludeFields.indexOf(k) === -1 && !!contact[k]);
                 const values: any = keys.map(k => `'${escape(contact[k])}'`);
                 const query = `
-                    INSERT INTO \`${DATASET_BULLHORN}.${Tables.USER}\` (${keys.join(', ')})
+                    INSERT INTO \`${DATASET_BULLHORN}.${Tables.CONTACTS}\` (${keys.join(', ')})
                     VALUES (${values.join(', ')})
                 `;
                 console.log(query);
@@ -141,19 +139,17 @@ export const saveClientContacts = async (contacts: any[]) => {
 export const saveCandidates = async (candidates: any[]) => {
     const expludeFields = [
         'address',
-        'description',
         '_score'
     ];
     try {
         for (const candidate of candidates) {
             try {
-                console.log(`Savng job with ID = ${candidate.id}`);
+                console.log(`Savng Candidate with ID = ${candidate.id}`);
                 const existing = await isExistByID(`'${candidate.id}'`, DATASET_BULLHORN, Tables.CANDIDATES);
                 if (existing) {
                     console.log(`Candidate with ID: ${candidate.id} exists`);
                     continue;
                 }
-                console.log('------')
                 const keys: string[] = Object.keys(candidate).filter(k => expludeFields.indexOf(k) === -1 && !!candidate[k]);
                 const values: any = keys.map(k => `'${escape(candidate[k])}'`);
                 const query = `
@@ -171,6 +167,47 @@ export const saveCandidates = async (candidates: any[]) => {
             } catch (error) {
                 console.log(error);
                 console.log(`ERROR: while saving Candidate with ID = ${candidate.id}`);
+            }
+        };
+
+        return { result: true };
+    } catch (error) {
+        console.log(error);
+        return { result: false, error };
+    }
+}
+
+export const saveLeads = async (leads: any[]) => {
+    const expludeFields = [
+        'address',
+        '_score'
+    ];
+    try {
+        for (const lead of leads) {
+            try {
+                console.log(`Savng Lead with ID = ${lead.id}`);
+                const existing = await isExistByID(`'${lead.id}'`, DATASET_BULLHORN, Tables.LEADS);
+                if (existing) {
+                    console.log(`Lead with ID: ${lead.id} exists`);
+                    continue;
+                }
+                const keys: string[] = Object.keys(lead).filter(k => expludeFields.indexOf(k) === -1 && !!lead[k]);
+                const values: any = keys.map(k => `'${escape(lead[k])}'`);
+                const query = `
+                    INSERT INTO \`${DATASET_BULLHORN}.${Tables.LEADS}\` (${keys.join(', ')})
+                    VALUES (${values.join(', ')})
+                `;
+                console.log(query);
+                const options = {
+                    query: query,
+                    location: 'US',
+                };
+                const [bgJob] = await BigQueryService.getClient().createQueryJob(options);
+                await bgJob.getQueryResults();
+                console.log(`Saved Lead with ID = ${lead.id} successfully`);
+            } catch (error) {
+                console.log(error);
+                console.log(`ERROR: while saving Lead with ID = ${lead.id}`);
             }
         };
 

@@ -6,6 +6,7 @@ import path from 'path';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import { NextFunction } from 'connect';
+import setupCronJobs from './cronjobs';
 
 dotenv.config();
 
@@ -57,3 +58,5 @@ useExpressServer(app, {
 app.listen(port, function () {
     console.log(`App is listening on port ${port} !`)
 });
+
+setupCronJobs();

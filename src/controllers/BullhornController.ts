@@ -22,4 +22,9 @@ export class BullhornController {
   async getCandidates() {
     return await (await BullhornService.getClient()).getCandidates();
   }
+
+  @Get('/bullhorn/leads')
+  async getLeads() {
+    return await (await BullhornService.getClient()).getLeads();
+  }
 }
