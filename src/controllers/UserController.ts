@@ -1,6 +1,5 @@
 import { Controller, Param, Body, Get, Post, Put, Delete, QueryParam, UploadedFile } from 'routing-controllers';
 import { register, login } from '../services/User';
-import { fileUploadOptions } from '../utils';
 import { CreateJwtToken } from '../utils/jwt';
 
 @Controller()
