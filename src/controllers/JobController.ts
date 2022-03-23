@@ -1,4 +1,4 @@
-import { Controller, Param, Body, Get, Post, Put, Delete, QueryParam, JsonController } from 'routing-controllers';
+import { Controller, Param, Body, Get, Post, Put, Delete, QueryParam, JsonController, Authorized } from 'routing-controllers';
 import { BigQueryService } from '../services/BigQueryService';
 import { GetroService } from '../services/GetroService';
 import { DATASET_BULLHORN, DATASET_GETRO, FilterOption, Job, FilterBody, JobSearchByFilterResponse, JobSearchByID, DataSource, Tables, ApplyResponse, GetSavedJobsResponse } from '../types/Common';
@@ -8,6 +8,7 @@ import { getCandidatesOnJob, getSavedJobs, saveApplication, saveJob } from '../u
 
 @JsonController('/api/job')
 export class JobController {
+  @Authorized()
   @Get('/search')
   async searchJobByID(
     @QueryParam('id') id: string
@@ -53,6 +54,7 @@ export class JobController {
     return result ? result[0] : undefined;
   }
 
+  @Authorized()
   @Post('/search')
   async searchByFilter(
     @Body() body: FilterBody
@@ -91,6 +93,7 @@ export class JobController {
     throw "invalid filter options";
   }
 
+  @Authorized()
   @Get('/apply')
   async apply(
     @QueryParam('candidate') candidate: string,
@@ -99,6 +102,7 @@ export class JobController {
     return await saveApplication(job, candidate);
   }
 
+  @Authorized()
   @Get('/candidates')
   async getCandidates(
     @QueryParam('job') job: string
@@ -106,6 +110,7 @@ export class JobController {
     return await getCandidatesOnJob(job);
   }
 
+  @Authorized()
   @Put('/save')
   async save(
     @QueryParam('candidate') candidate: string,
@@ -114,6 +119,7 @@ export class JobController {
     return await saveJob(job, candidate);
   }
 
+  @Authorized()
   @Get('/savedJobs')
   async savedJobs(
     @QueryParam('candidate') candidate: string,

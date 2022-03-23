@@ -8,7 +8,7 @@ const testMode = false;
 
 const setupCronJobs = () => {
 
-    cron.schedule('* 0,6,12,18 * * *', async () => {
+    cron.schedule('* 0 * * *', async () => {
         try {
             consoleLog('/// CRON_JOB_STARTED: BULLHORN_GET_COMPANIES');
             await (await BullhornService.getClient()).getCompanies(testMode, 50);
@@ -18,17 +18,17 @@ const setupCronJobs = () => {
         consoleLog('/// CRON_JOB_ENDED: BULLHORN_GET_COMPANIES');
     });
 
-    cron.schedule('* 2,8,14,20 * * *', async () => {
+    cron.schedule('* 4 * * *', async () => {
         try {
-            consoleLog('/// CRON_JOB_STARTED: BULLHORN_GET_COMPANIES');
-            await (await BullhornService.getClient()).getCompanies(testMode, 50);
+            consoleLog('/// CRON_JOB_STARTED: BULLHORN_GET_JOBS');
+            await (await BullhornService.getClient()).getJobs(testMode, 50);
         } catch (error) {
             consoleLog(error);
         }
-        consoleLog('/// CRON_JOB_ENDED: BULLHORN_GET_COMPANIES');
+        consoleLog('/// CRON_JOB_ENDED: BULLHORN_GET_JOBS');
     });
 
-    cron.schedule('* 4,10,16,22 * * *', async () => {
+    cron.schedule('* 8 * * *', async () => {
         try {
             consoleLog('/// CRON_JOB_STARTED: BULLHORN_GET_CLIENTCONTACTS');
             await (await BullhornService.getClient()).getClientContacts(testMode, 50);
@@ -38,7 +38,7 @@ const setupCronJobs = () => {
         consoleLog('/// CRON_JOB_ENDED: BULLHORN_GET_CLIENTCONTACTS');
     });
 
-    cron.schedule('* 4,10,16,22 * * *', async () => {
+    cron.schedule('* 12 * * *', async () => {
         try {
             consoleLog('/// CRON_JOB_STARTED: BULLHORN_GET_CANDIDATES');
             await (await BullhornService.getClient()).getCandidates(testMode, 50);
@@ -48,7 +48,7 @@ const setupCronJobs = () => {
         consoleLog('/// CRON_JOB_ENDED: BULLHORN_GET_CANDIDATES');
     });
 
-    cron.schedule('* 4,10,16,22 * * *', async () => {
+    cron.schedule('* 17 * * *', async () => {
         try {
             consoleLog('/// CRON_JOB_STARTED: BULLHORN_GET_LEADS');
             await (await BullhornService.getClient()).getLeads(testMode, 50);
@@ -58,7 +58,7 @@ const setupCronJobs = () => {
         consoleLog('/// CRON_JOB_ENDED: BULLHORN_GET_LEADS');
     });
 
-    cron.schedule('* 0,6,12,18 * * *', async () => {
+    cron.schedule('* 0 * * *', async () => {
         try {
             consoleLog('/// CRON_JOB_STARTED: GETRO_GET_COMPANIES');
             await (await GetroService.getClient()).getCompanies(testMode, 50);
@@ -68,7 +68,7 @@ const setupCronJobs = () => {
         consoleLog('/// CRON_JOB_ENDED: GETRO_GET_COMPANIES');
     });
 
-    cron.schedule('* 3,9,15,21 * * *', async () => {
+    cron.schedule('* 8 * * *', async () => {
         try {
             consoleLog('/// CRON_JOB_STARTED: GETRO_GET_JOBS');
             await (await GetroService.getClient()).getJobs(testMode, 50);
@@ -78,7 +78,7 @@ const setupCronJobs = () => {
         consoleLog('/// CRON_JOB_ENDED: GETRO_GET_JOBS');
     });
 
-    cron.schedule('* 1,8,14,20 * * *', async () => {
+    cron.schedule('* 16 * * *', async () => {
         try {
             consoleLog('/// CRON_JOB_STARTED: GETRO_GET_MEMBERS');
             await (await GetroService.getClient()).getMembers(testMode, 50);

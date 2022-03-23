@@ -1,4 +1,5 @@
 import { v4 as uuid4 } from 'uuid';
+import config from '../config';
 import { BigQueryService } from "../services/BigQueryService";
 import { DataSource } from "../types/Common";
 import { CITY_INCLUDE_KEYS_REGEX, JOB_EXCLUDE_KEYS_REGEX } from './constant';
@@ -72,4 +73,10 @@ export const checkForJobFilter = (title: string, location: string) => {
     if (title.match(JOB_EXCLUDE_KEYS_REGEX)) return false;
     if (location.replace(/\s+/g, '').match(CITY_INCLUDE_KEYS_REGEX)) return true;
     return false;
+}
+
+export const fileUploadOptions = {
+    limits: {
+        fileSize: config.fileUploadSize,
+    }
 }

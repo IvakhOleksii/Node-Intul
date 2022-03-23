@@ -23,23 +23,19 @@
     "dev-win": "nodemon src/app.ts",
     "build": "export GOOGLE_APPLICATION_CREDENTIALS='./src/config/service-account-file.json' && tsc",
     "build-win": "tsc",
-
     "bullhorn_get_companies": "npm run build && node ./dist/cronjobs/bullhorn_get_companies",
     "bullhorn_get_jobs": "npm run build && node ./dist/cronjobs/bullhorn_get_jobs",
     "bullhorn_get_contacts": "npm run build && node ./dist/cronjobs/bullhorn_get_contacts",
     "bullhorn_get_candidates": "npm run build && node ./dist/cronjobs/bullhorn_get_candidates",
     "bullhorn_get_leads": "npm run build && node ./dist/cronjobs/bullhorn_get_leads",
-
     "getro_get_companies": "npm run build && node ./dist/cronjobs/getro_get_companies",
     "getro_get_jobs": "npm run build && node ./dist/cronjobs/getro_get_jobs",
     "getro_get_members": "npm run build && node ./dist/cronjobs/getro_get_members",
-
     "bullhorn_get_companies_win": "npm run build-win && node ./dist/cronjobs/bullhorn_get_companies",
     "bullhorn_get_jobs_win": "npm run build-win && node ./dist/cronjobs/bullhorn_get_jobs",
     "bullhorn_get_contacts_win": "npm run build-win && node ./dist/cronjobs/bullhorn_get_contacts",
     "bullhorn_get_candidates_win": "npm run build-win && node ./dist/cronjobs/bullhorn_get_candidates",
     "bullhorn_get_leads_win": "npm run build-win && node ./dist/cronjobs/bullhorn_get_leads",
-    
     "getro_get_companies_win": "npm run build-win && node ./dist/cronjobs/getro_get_companies",
     "getro_get_jobs_win": "npm run build-win && node ./dist/cronjobs/getro_get_jobs",
     "getro_get_members_win": "npm run build-win && node ./dist/cronjobs/getro_get_members"

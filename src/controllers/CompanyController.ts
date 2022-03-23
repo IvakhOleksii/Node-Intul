@@ -1,4 +1,4 @@
-import { Controller, Param, Body, Get, Post, Put, Delete, QueryParam, JsonController } from 'routing-controllers';
+import { Controller, Param, Body, Get, Post, Put, Delete, QueryParam, JsonController, Authorized } from 'routing-controllers';
 import { BigQueryService } from '../services/BigQueryService';
 import { GetroService } from '../services/GetroService';
 import { DATASET_BULLHORN, DATASET_GETRO, FilterOption, Job, FilterBody, JobSearchByFilterResponse, JobSearchByID, DataSource, Tables, Company, CompanySearchByID, CompanySearchByFilterResponse } from '../types/Common';
@@ -7,6 +7,7 @@ import { CompanyFilter, JobFilter } from '../utils/FieldMatch';
 
 @JsonController('/api/company')
 export class CompanyController {
+  @Authorized()
   @Get('/search')
   async searchJobByID(
     @QueryParam('id') id: string
@@ -52,6 +53,7 @@ export class CompanyController {
     return result ? result[0] : undefined;
   }
 
+  @Authorized()
   @Post('/search')
   async searchByFilter(
     @Body() body: FilterBody

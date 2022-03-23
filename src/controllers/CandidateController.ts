@@ -1,4 +1,4 @@
-import { Controller, Param, Body, Get, Post, Put, Delete, QueryParam, JsonController } from 'routing-controllers';
+import { Controller, Param, Body, Get, Post, Put, Delete, QueryParam, JsonController, Authorized } from 'routing-controllers';
 import { BigQueryService } from '../services/BigQueryService';
 import { GetroService } from '../services/GetroService';
 import { DATASET_BULLHORN, DATASET_GETRO, FilterOption, Job, FilterBody, JobSearchByFilterResponse, JobSearchByID, DataSource, Tables, ApplyResponse, GetSavedJobsResponse } from '../types/Common';
@@ -8,6 +8,7 @@ import { getSavedJobs, saveApplication, saveJob } from '../utils/MainCrud';
 
 @JsonController('/api/candidate')
 export class JobController {
+  @Authorized()
   @Get('/savedJobs')
   async savedJobs(
     @QueryParam('candidate') candidate: string,

@@ -181,7 +181,7 @@ export class BullhornService {
         let total = 100000;
         let repeatErr = 0;
 
-        while (repeatErr < 5) {
+        while (repeatErr < 3) {
             console.log(`\nBullhorn_GET_COMPANY: ${total} / ${offset}`);
             try {
                 const query = queryString.stringify({
@@ -273,7 +273,7 @@ export class BullhornService {
         let total = 100000;
         let repeatErr = 0;
 
-        while (repeatErr < 5) {
+        while (repeatErr < 3) {
             console.log(`\nBullhorn_GET_JOBS: ${total} / ${offset}`);
             try {
                 const query = queryString.stringify({
@@ -414,7 +414,7 @@ export class BullhornService {
         let total = 100000;
         let repeatErr = 0;
 
-        while (repeatErr < 5) {
+        while (repeatErr < 3) {
             console.log(`\nBullhorn_GET_CLIENTCONTACTS: ${total} / ${offset}`);
             try {
                 const query = queryString.stringify({
@@ -522,7 +522,7 @@ export class BullhornService {
         let total = 100000;
         let repeatErr = 0;
 
-        while (repeatErr < 5) {
+        while (repeatErr < 3) {
             console.log(`\nBullhorn_GET_CANDIDATES: ${total} / ${offset}`);
             try {
                 const query = queryString.stringify({
@@ -678,7 +678,7 @@ export class BullhornService {
         let total = 100000;
         let repeatErr = 0;
 
-        while (repeatErr < 5) {
+        while (repeatErr < 3) {
             console.log(`\nBullhorn_GET_LEADS: ${total} / ${offset}`);
             try {
                 const query = queryString.stringify({

@@ -59,7 +59,7 @@ export class GetroService {
         let page = 1;
         let repeatErr = 0;
 
-        while (repeatErr < 5) {
+        while (repeatErr < 3) {
             try {
                 await this.checkAuth();
                 const query = queryString.stringify({
@@ -121,7 +121,7 @@ export class GetroService {
         let page = 1;
         let repeatErr = 0;
 
-        while (repeatErr < 5) {
+        while (repeatErr < 3) {
             try {
                 await this.checkAuth();
                 const query = queryString.stringify({
@@ -196,7 +196,7 @@ export class GetroService {
                 const company_id = company.id.slice(3);
                 let page = 1;
                 let repeatErr = 0;
-                while (repeatErr < 5) {
+                while (repeatErr < 3) {
                     const query = queryString.stringify({
                         per_page,
                         page,
