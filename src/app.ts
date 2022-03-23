@@ -7,7 +7,7 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import { NextFunction } from 'connect';
 import setupCronJobs from './cronjobs';
-import { VerifyJwtToken } from './utils/jwt';
+import { VerifyJwtToken } from './utils/jwtUtils';
 import { findUserByEmail } from './services/User';
 import multer from 'multer';
 import { genUUID } from './utils';

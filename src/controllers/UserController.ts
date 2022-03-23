@@ -1,6 +1,6 @@
 import { Controller, Param, Body, Get, Post, Put, Delete, QueryParam, UploadedFile } from 'routing-controllers';
 import { register, login } from '../services/User';
-import { CreateJwtToken } from '../utils/jwt';
+import { CreateJwtToken } from '../utils/jwtUtils';
 
 @Controller()
 export class UserController {
