@@ -108,4 +108,4 @@ app.listen(port, function () {
     console.log(`App is listening on port ${port} !`)
 });
 
-// setupCronJobs();
+setupCronJobs();
