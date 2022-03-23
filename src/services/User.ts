@@ -3,6 +3,7 @@ import { BigQueryService } from "./BigQueryService";
 import { DATASET_MAIN, Tables } from "../types/Common";
 import { ROLES } from "../utils/constant";
 import { validate } from "class-validator";
+import { genUUID } from "../utils";
 
 const isNullOrEmpty = (value: any) => {
     return !value || (value && !`${value}`.trim())
@@ -73,8 +74,8 @@ export const register = async (data: User) => {
         }
 
         const query = `
-            INSERT INTO \`${DATASET_MAIN}.${Tables.USER}\` (firstname, lastname, email, password, role, city, state, resume, linkedin, skills, expertise)
-            VALUES ("${firstname}", "${lastname}", "${email}", "${password}", "${role}", "${city}", "${state}", "${resume}", "${linkedin}", "${skills}", "${expertise}")
+            INSERT INTO \`${DATASET_MAIN}.${Tables.USER}\` (id, firstname, lastname, email, password, role, city, state, resume, linkedin, skills, expertise)
+            VALUES ("${genUUID()}", "${firstname}", "${lastname}", "${email}", "${password}", "${role}", "${city}", "${state}", "${resume}", "${linkedin}", "${skills}", "${expertise}")
         `;
         const options = {
             query: query,
