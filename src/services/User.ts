@@ -125,7 +125,7 @@ export const login = async (email: string, password: string) => {
         const [job] = await BigQueryService.getClient().createQueryJob(options);
         const [res] = await job.getQueryResults();
         if (res && res.length > 0 && res[0].email === email) {
-            return { result: true };
+            return { result: true, user_id: res[0].id, role: res[0].role };
         }
         return { result: false, error: 'wrong credential' };
     } catch (error) {
