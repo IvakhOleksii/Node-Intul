@@ -26,7 +26,6 @@ const multerStorage = multer.diskStorage({
 const upload = multer({storage: multerStorage, dest: __dirname + '/../uploads/resumes'});
 
   
-const handleCors = (router: Router) => router.use(cors({ origin: true }));
 
 const getActualRequestDurationInMs = (start: any) => {
     const NS_PER_SEC = 1e9;
@@ -65,6 +64,7 @@ const port = process.env.PORT || 3001;
 app.use(bodyParser.json());
 app.use(logger);
 app.use(express.static('uploads'));
+app.use(cors());
 
 app.post('/api/upload', upload.single('file'), (req, res) => {
     if(req.file) {
@@ -80,8 +80,6 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
         });
     };
 });
-
-handleCors(app);
 
 useExpressServer(app, {
     controllers: [path.join(__dirname + '/controllers/*.ts')],
