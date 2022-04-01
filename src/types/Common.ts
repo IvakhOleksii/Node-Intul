@@ -1,6 +1,7 @@
 import config from "../config";
 import { Job as BullhornJob, Company as BullhornCompany } from '../types/Bullhorn';
 import { Job as GetroJob , Company as GetroCompany} from '../types/Getro';
+import { User } from "./User";
 
 export enum Tables {
     COMPANIES = 'Companies',
@@ -80,3 +81,15 @@ export type CompanySearchByFilterResponse = {
     total?: number;
     message?: any;
 }
+
+// Candidate Types
+export type CandidateSearchByIdResponse = {
+    candidate?: User;
+    message?: any;
+};
+
+export type CandidateSearchByFilterResponse = {
+    candidates?: User[];
+    total?: number;
+    message?: any;
+};

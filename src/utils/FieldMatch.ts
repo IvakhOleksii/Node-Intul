@@ -18,3 +18,13 @@ export const CompanyFilter: any = {
         city: 'locations',
     }
 }
+
+export const USER_FILTER: any = {
+    firstname: 'firstname', 
+    lastname: 'lastname', 
+    role: 'role', 
+    city: 'city', 
+    state: 'state', 
+    skills: 'skills', 
+    expertise: 'expertise', 
+};
