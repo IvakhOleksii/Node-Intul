@@ -1,13 +1,16 @@
 {
   "dependencies": {
     "@google-cloud/bigquery-connection": "^1.5.1",
+    "@sendgrid/mail": "^7.6.2",
     "@types/cors": "^2.8.12",
+    "@types/ejs": "^3.1.0",
     "@types/jsonwebtoken": "^8.5.8",
     "@types/node-cron": "^3.0.1",
     "@types/uuid": "^8.3.4",
     "axios": "^0.25.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.13.2",
+    "ejs": "^3.1.6",
     "express": "^4.17.2",
     "fs": "^0.0.1-security",
     "multer": "^1.4.4",
@@ -19,9 +22,9 @@
     "uuid": "^8.3.2"
   },
   "scripts": {
-    "dev": "export GOOGLE_APPLICATION_CREDENTIALS='./src/config/service-account-file.json' && nodemon src/app.ts",
+    "dev": "cp -R ./src/templates ./dist && export GOOGLE_APPLICATION_CREDENTIALS='./src/config/service-account-file.json' && nodemon src/app.ts",
     "dev-win": "nodemon src/app.ts",
-    "build": "export GOOGLE_APPLICATION_CREDENTIALS='./src/config/service-account-file.json' && tsc",
+    "build": "export GOOGLE_APPLICATION_CREDENTIALS='./src/config/service-account-file.json' && tsc && cp -R ./src/templates ./dist",
     "build-win": "tsc",
     "bullhorn_get_companies": "npm run build && node ./dist/cronjobs/bullhorn_get_companies",
     "bullhorn_get_jobs": "npm run build && node ./dist/cronjobs/bullhorn_get_jobs",
