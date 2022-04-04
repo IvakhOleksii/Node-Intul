@@ -8,7 +8,6 @@ import { getCandidatesOnJob, getSavedJobs, saveApplication, saveJob } from '../u
 
 @JsonController('/api/job')
 export class JobController {
-  @Authorized()
   @Get('/search')
   async searchJobByID(
     @QueryParam('id') id: string
@@ -54,7 +53,6 @@ export class JobController {
     return result ? result[0] : undefined;
   }
 
-  @Authorized()
   @Post('/search')
   async searchByFilter(
     @Body() body: FilterBody

@@ -7,7 +7,6 @@ import { CompanyFilter, JobFilter } from '../utils/FieldMatch';
 
 @JsonController('/api/company')
 export class CompanyController {
-  @Authorized()
   @Get('/search')
   async searchJobByID(
     @QueryParam('id') id: string
@@ -53,7 +52,6 @@ export class CompanyController {
     return result ? result[0] : undefined;
   }
 
-  @Authorized()
   @Post('/search')
   async searchByFilter(
     @Body() body: FilterBody
