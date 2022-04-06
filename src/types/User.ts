@@ -10,6 +10,9 @@ export type User = {
     linkedin: string;
     skills: string;
     expertise: string;
+    experienceYears?: string;
+    workspace?: string;
+    aboutUs?: string;
 };
 
 export type LoginInfo = {
