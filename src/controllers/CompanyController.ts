@@ -88,11 +88,11 @@ export class CompanyController {
   ) {
     const _filters = filters?.filter(opt => Object.keys(CompanyFilter.bullhorn).indexOf(opt.key) > -1);
     if (_filters && _filters?.length > 0) {
-      const _fields = fields ? fields.join(' ') : '*';
+      const _fields = fields ? fields.join(', ') : '*';
       const _dataset = DATASET_BULLHORN;
       const _table = Tables.COMPANIES;
       const _condition = _filters
-        .map(opt => `${CompanyFilter.bullhorn[opt.key]} LIKE '%${opt.value}%'`)
+        .map(opt => `LOWER(${CompanyFilter.bullhorn[opt.key]}) LIKE '%${opt.value.toLowerCase()}%'`)
         .join(' AND ');
       const result = await BigQueryService.selectQuery(_dataset, _table, _fields, count, _condition);
       return result;
@@ -108,11 +108,11 @@ export class CompanyController {
   ) {
     const _filters = filters?.filter(opt => Object.keys(CompanyFilter.getro).indexOf(opt.key) > -1);
     if (_filters && _filters?.length > 0) {
-      const _fields = fields ? fields.join(' ') : '*';
+      const _fields = fields ? fields.join(', ') : '*';
       const _dataset = DATASET_GETRO;
       const _table = Tables.COMPANIES;
       const _condition = _filters
-        .map(opt => `${CompanyFilter.getro[opt.key]} LIKE '%${opt.value}%'`)
+        .map(opt => `LOWER(${CompanyFilter.getro[opt.key]}) LIKE '%${opt.value.toLowerCase()}%'`)
         .join(' AND ');
       const result = await BigQueryService.selectQuery(_dataset, _table, _fields, count, _condition);
       return result;

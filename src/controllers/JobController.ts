@@ -80,11 +80,11 @@ export class JobController {
     count: number
   ) {
     if (filters?.map(opt => Object.keys(JobFilter.bullhorn).indexOf(opt.key) > -1).every(val => val === true)) {
-      const _fields = fields ? fields.join(' ') : '*';
+      const _fields = fields ? fields.join(', ') : '*';
       const _dataset = DATASET_BULLHORN;
       const _table = Tables.JOBS;
       const _condition = filters && filters
-        .map(opt => `${JobFilter.bullhorn[opt.key]} LIKE '%${opt.value}%'`)
+        .map(opt => `LOWER(${JobFilter.bullhorn[opt.key]}) LIKE '%${opt.value.toLowerCase()}%'`)
         .join(' AND ');
       return await BigQueryService.selectQuery(_dataset, _table, _fields, count, _condition);
     }
