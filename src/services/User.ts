@@ -65,7 +65,8 @@ export const register = async (data: User) => {
             expertise,
             experienceYears,
             workspace,
-            aboutUs
+            referredBy,
+            roles
         } = data;
 
         const existing = await isExistUser(email);
@@ -77,8 +78,8 @@ export const register = async (data: User) => {
         }
 
         const query = `
-            INSERT INTO \`${DATASET_MAIN}.${Tables.USER}\` (id, firstname, lastname, email, password, role, city, state, resume, linkedin, skills, expertise, experienceYears, workspace, aboutUs)
-            VALUES ("${genUUID()}", "${firstname}", "${lastname}", "${email}", "${password}", "${role}", "${city}", "${state}", "${resume}", "${linkedin}", "${skills}", "${expertise}", "${experienceYears}", "${workspace}", "${aboutUs}")
+            INSERT INTO \`${DATASET_MAIN}.${Tables.USER}\` (id, firstname, lastname, email, password, role, city, state, resume, linkedin, skills, expertise, experienceYears, workspace, referredBy, roles)
+            VALUES ("${genUUID()}", "${firstname}", "${lastname}", "${email}", "${password}", "${role}", "${city}", "${state}", "${resume}", "${linkedin}", "${skills}", "${expertise}", "${experienceYears}", "${workspace}", "${referredBy}", "${roles}")
         `;
         const options = {
             query: query,
