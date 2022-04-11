@@ -1,7 +1,7 @@
 import { Controller, Param, Body, Get, Post, Put, Delete, QueryParam, JsonController, Authorized } from 'routing-controllers';
 import { BigQueryService } from '../services/BigQueryService';
 import { GetroService } from '../services/GetroService';
-import { FilterBody, Tables, GetSavedJobsResponse, CandidateSearchByFilterResponse, CandidateSearchByIdResponse, DATASET_MAIN } from '../types/Common';
+import { FilterBody, Tables, GetSavedJobsResponse, CandidateSearchByFilterResponse, CandidateSearchByIdResponse, DATASET_MAIN, Company, UpdateComapnyProfileResponse } from '../types/Common';
 import { User } from '../types/User';
 import { getDataSource } from '../utils';
 import { JobFilter, USER_FILTER } from '../utils/FieldMatch';
@@ -64,6 +64,16 @@ export class JobController {
     } catch (error) {
       console.log(error);
       return { message: error };
+    }
+  }
+
+  @Authorized()
+  @Post('/update')
+  async updateProfile(
+    @Body() body: User
+  ): Promise<UpdateComapnyProfileResponse> {
+    return {
+      result: true,
     }
   }
 }

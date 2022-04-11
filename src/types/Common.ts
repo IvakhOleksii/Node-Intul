@@ -93,3 +93,8 @@ export type CandidateSearchByFilterResponse = {
     total?: number;
     message?: any;
 };
+
+export type UpdateComapnyProfileResponse = {
+    result: boolean;
+    message?: any;
+}

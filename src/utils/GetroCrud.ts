@@ -15,7 +15,7 @@ export const saveCompanies = async (companies: any[]) => {
                     continue;
                 }
                 const keys: string[] = Object.keys(company).filter(k => expludeFields.indexOf(k) === -1 && !!company[k]);
-                const values: any = keys.map(k => `"${escape(company[k])}"`);
+                const values: any = keys.map(k => `"""${company[k]}"""`);
                 const query = `
                     INSERT INTO \`${DATASET_GETRO}.${Tables.COMPANIES}\` (${keys.join(', ')})
                     VALUES (${values.join(', ')})
@@ -53,7 +53,7 @@ export const saveMembers = async (members: any[]) => {
                     continue;
                 }
                 const keys: string[] = Object.keys(member).filter(k => expludeFields.indexOf(k) === -1 && !!member[k]);
-                const values: any = keys.map(k => `"${escape(member[k])}"`);
+                const values: any = keys.map(k => `"""${(member[k])}"""`);
                 const query = `
                     INSERT INTO \`${DATASET_GETRO}.${Tables.USER}\` (${keys.join(', ')})
                     VALUES (${values.join(', ')})
@@ -103,7 +103,7 @@ export const saveJobs = async (jobs: any[]) => {
                     continue;
                 }
                 const keys: string[] = Object.keys(job).filter(k => expludeFields.indexOf(k) === -1 && !!job[k]);
-                const values: any = keys.map(k => `"${escape(job[k])}"`);
+                const values: any = keys.map(k => `"""${job[k]}"""`);
                 const query = `
                     INSERT INTO \`${DATASET_GETRO}.${Tables.JOBS}\` (${keys.join(', ')})
                     VALUES (${values.join(', ')})
