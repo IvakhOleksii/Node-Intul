@@ -1,9 +1,8 @@
-import { User } from "../types/User";
+import { User, USERKEYS } from "../types/User";
 import { BigQueryService } from "./BigQueryService";
 import { DATASET_MAIN, Tables } from "../types/Common";
 import { ROLES } from "../utils/constant";
-import { validate } from "class-validator";
-import { genUUID } from "../utils";
+import { genUUID, justifyData } from "../utils";
 
 const isNullOrEmpty = (value: any) => {
     return !value || (value && !`${value}`.trim())
@@ -31,14 +30,14 @@ const validateUser = ({
             return `role is invalid, it should be one in [${ROLES.join(', ')}]`;
         if (isNullOrEmpty(password))
             return 'password is required';
-        if (isNullOrEmpty(resume))
-            return 'resume is required';
-        if (isNullOrEmpty(linkedin))
-            return 'linkedin is required';
+        // if (isNullOrEmpty(resume))
+        //     return 'resume is required';
+        // if (isNullOrEmpty(linkedin))
+        //     return 'linkedin is required';
         if (isNullOrEmpty(skills))
             return 'skill is required';
-        if (isNullOrEmpty(expertise))
-            return 'expertise is required';
+        // if (isNullOrEmpty(expertise))
+        //     return 'expertise is required';
     } catch (error) {
         return 'something is wrong, please check params';
     }
@@ -47,39 +46,57 @@ const validateUser = ({
 
 export const register = async (data: User) => {
     try {
-
         const validate = validateUser(data);
         if (validate) return { result: false, error: validate };
-
-        const {
-            firstname,
-            lastname,
-            email,
-            password,
-            role,
-            city = '',
-            state = '',
-            resume,
-            linkedin,
-            skills,
-            expertise,
-            experienceYears,
-            workspace,
-            referredBy,
-            roles
-        } = data;
-
-        const existing = await isExistUser(email);
+        
+        const user = justifyData(data, USERKEYS);
+        const existing = await isExistUser('email', user.email);
         if (existing) {
             return {
                 result: false,
-                error: `User with ${email} exists`
+                error: `User with ${user.email} exists`
             };
         }
 
+        const keys = Object.keys(user);
+        const values = keys.map(k => `"""${user[k]}"""`);
+        
         const query = `
-            INSERT INTO \`${DATASET_MAIN}.${Tables.USER}\` (id, firstname, lastname, email, password, role, city, state, resume, linkedin, skills, expertise, experienceYears, workspace, referredBy, roles)
-            VALUES ("${genUUID()}", "${firstname}", "${lastname}", "${email}", "${password}", "${role}", "${city}", "${state}", "${resume}", "${linkedin}", "${skills}", "${expertise}", "${experienceYears}", "${workspace}", "${referredBy}", "${roles}")
+            INSERT INTO \`${DATASET_MAIN}.${Tables.USER}\` (id, ${keys.join(', ')})
+            VALUES ("${genUUID()}", ${values.join(', ')})
+        `;
+        console.log(query);
+        const options = {
+            query: query,
+            location: 'US',
+        };
+        const [job] = await BigQueryService.getClient().createQueryJob(options);
+        await job.getQueryResults();
+
+        return { result: true };
+    } catch (error) {
+        return { result: false, error };
+    }
+}
+
+export const update = async (id: string, data: User) => {
+    try {
+        const user = justifyData(data, USERKEYS, ['email', 'id']);
+        const existing = await isExistUser('id', id);
+        if (!existing) {
+            return {
+                result: false,
+                error: `User with id=${id} exists`
+            };
+        }
+
+        const keys = Object.keys(user);
+        const values = keys.map(k => `${k}="""${user[k]}"""`);
+        
+        const query = `
+            UPDATE \`${DATASET_MAIN}.${Tables.USER}\`
+            SET ${values.join(', ')}
+            WHERE id = '${id}'
         `;
         const options = {
             query: query,
@@ -94,11 +111,11 @@ export const register = async (data: User) => {
     }
 }
 
-export const isExistUser = async (email: string) => {
+export const isExistUser = async (field: string, value: string) => {
     try {
         const query = `
             SELECT * FROM \`${DATASET_MAIN}.${Tables.USER}\`
-            WHERE email='${email}'
+            WHERE ${field}='${value}'
         `;
         const options = {
             query: query,
@@ -106,7 +123,7 @@ export const isExistUser = async (email: string) => {
         };
         const [job] = await BigQueryService.getClient().createQueryJob(options);
         const [res] = await job.getQueryResults();
-        if (res && res.length > 0 && res[0].email === email) {
+        if (res && res.length > 0 && res[0][field] === value) {
             return true;
         }
         return false;

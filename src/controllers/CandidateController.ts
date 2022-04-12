@@ -66,14 +66,4 @@ export class JobController {
       return { message: error };
     }
   }
-
-  @Authorized()
-  @Post('/update')
-  async updateProfile(
-    @Body() body: User
-  ): Promise<UpdateComapnyProfileResponse> {
-    return {
-      result: true,
-    }
-  }
 }
