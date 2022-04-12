@@ -1,7 +1,7 @@
 import { User, USERKEYS } from "../types/User";
 import { BigQueryService } from "./BigQueryService";
 import { DATASET_MAIN, Tables } from "../types/Common";
-import { ROLES } from "../utils/constant";
+import { COORDINATOR, ROLES } from "../utils/constant";
 import { genUUID, justifyData } from "../utils";
 
 const isNullOrEmpty = (value: any) => {
@@ -79,9 +79,25 @@ export const register = async (data: User) => {
     }
 }
 
-export const update = async (id: string, data: User) => {
+export const update = async (parent_id: string, role: string, data: User) => {
     try {
+        const user_id = data.id;
+        const id = user_id || parent_id;
+        if (user_id && role !== COORDINATOR) {
+            return {
+                result: false,
+                error: 'You should be a coordinator for updating this user'
+            };
+        }
+
         const user = justifyData(data, USERKEYS, ['email', 'id']);
+        if (user && user.role && !ROLES.find(role => role === user.role)) {
+            return {
+                result: false,
+                error: `Invalid Role (candidate, coordinator, company)`
+            };
+        }
+
         const existing = await isExistUser('id', id);
         if (!existing) {
             return {

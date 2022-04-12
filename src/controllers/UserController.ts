@@ -43,6 +43,6 @@ export class UserController {
     @Body() user: User,
     @CurrentUser() authUser: User,
   ) {
-    return await update(authUser.id, user);
+    return await update(authUser.id, authUser.role, user);
   }
 }
