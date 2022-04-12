@@ -38,6 +38,9 @@ export type User = {
     experience?: string;
     hourlyRate?: string;
     willRelocate?: string;
+    ethnicity?: string;
+    workAuthorized?: string;
+    disability?: string;
 };
 
 export const IUSER = {
@@ -77,6 +80,9 @@ export const IUSER = {
     experience: '',
     hourlyRate: '',
     willRelocate: '',
+    ethnicity: '',
+    workAuthorized: '',
+    disability: ''
 };
 
 export const USERKEYS = Object.keys(IUSER);
