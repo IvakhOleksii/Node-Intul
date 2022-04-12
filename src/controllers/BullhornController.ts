@@ -3,31 +3,32 @@ import { BullhornService } from '../services/BullhornService';
 
 @Controller()
 export class BullhornController {
-  @Authorized()
+  // @Authorized()
   @Get('/bullhorn/companies')
   async getCompanies() {
     return await (await BullhornService.getClient()).getCompanies();
   }
 
-  @Authorized()
+  // @Authorized()
   @Get('/bullhorn/jobs')
   async getJobs() {
+    console.log('~~~~~~')
     return await (await BullhornService.getClient()).getJobs();
   }
 
-  @Authorized()
+  // @Authorized()
   @Get('/bullhorn/clientContacts')
   async getClientContacts() {
     return await (await BullhornService.getClient()).getClientContacts();
   }
 
-  @Authorized()
+  // @Authorized()
   @Get('/bullhorn/candidates')
   async getCandidates() {
     return await (await BullhornService.getClient()).getCandidates();
   }
 
-  @Authorized()
+  // @Authorized()
   @Get('/bullhorn/leads')
   async getLeads() {
     return await (await BullhornService.getClient()).getLeads();

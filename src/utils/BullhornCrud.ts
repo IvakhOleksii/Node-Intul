@@ -15,7 +15,7 @@ export const saveCompanies = async (companies: any[]) => {
                     continue;
                 }
                 const keys: string[] = Object.keys(company).filter(k => expludeFields.indexOf(k) === -1 && !!company[k]);
-                const values = keys.map(k => `"${escape(company[k])}"`);
+                const values = keys.map(k => `"""${company[k]}"""`);
                 const query = `
                     INSERT INTO \`${DATASET_BULLHORN}.${Tables.COMPANIES}\` (${keys.join(', ')})
                     VALUES (${values.join(', ')})
@@ -66,7 +66,7 @@ export const saveJobs = async (jobs: any[]) => {
                     continue;
                 }
                 const keys: string[] = Object.keys(job).filter(k => expludeFields.indexOf(k) === -1 && !!job[k]);
-                const values: any = keys.map(k => `'${escape(job[k])}'`);
+                const values: any = keys.map(k => `"""${job[k]}"""`);
                 const query = `
                     INSERT INTO \`${DATASET_BULLHORN}.${Tables.JOBS}\` (${keys.join(', ')})
                     VALUES (${values.join(', ')})
@@ -110,7 +110,7 @@ export const saveClientContacts = async (contacts: any[]) => {
                 }
                 console.log('------')
                 const keys: string[] = Object.keys(contact).filter(k => expludeFields.indexOf(k) === -1 && !!contact[k]);
-                const values: any = keys.map(k => `'${escape(contact[k])}'`);
+                const values: any = keys.map(k => `"""${contact[k]}"""`);
                 const query = `
                     INSERT INTO \`${DATASET_BULLHORN}.${Tables.CONTACTS}\` (${keys.join(', ')})
                     VALUES (${values.join(', ')})
@@ -151,7 +151,7 @@ export const saveCandidates = async (candidates: any[]) => {
                     continue;
                 }
                 const keys: string[] = Object.keys(candidate).filter(k => expludeFields.indexOf(k) === -1 && !!candidate[k]);
-                const values: any = keys.map(k => `'${escape(candidate[k])}'`);
+                const values: any = keys.map(k => `"""${candidate[k]}"""`);
                 const query = `
                     INSERT INTO \`${DATASET_BULLHORN}.${Tables.CANDIDATES}\` (${keys.join(', ')})
                     VALUES (${values.join(', ')})
@@ -192,7 +192,7 @@ export const saveLeads = async (leads: any[]) => {
                     continue;
                 }
                 const keys: string[] = Object.keys(lead).filter(k => expludeFields.indexOf(k) === -1 && !!lead[k]);
-                const values: any = keys.map(k => `'${escape(lead[k])}'`);
+                const values: any = keys.map(k => `"""${lead[k]}"""`);
                 const query = `
                     INSERT INTO \`${DATASET_BULLHORN}.${Tables.LEADS}\` (${keys.join(', ')})
                     VALUES (${values.join(', ')})

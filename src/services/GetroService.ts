@@ -2,7 +2,7 @@ import axios from 'axios';
 import config from "../config";
 import queryString from 'query-string';
 import { getCompanies, saveCompanies, saveJobs, saveMembers } from '../utils/GetroCrud';
-import { checkForJobFilter } from '../utils';
+import { checkForJobFilter, sleep } from '../utils';
 
 export class GetroService {
     public static client: GetroService | null = null;
@@ -38,18 +38,22 @@ export class GetroService {
         throw 'Auth failed';
     }
     async getNetworkID(): Promise<boolean> {
-        console.log('\n***** getNetworkID *****');
-        const url = `${this.api_base_url_v2}/networks`;
-        const res = await axios.get(url, this.getOptions());
-        if (res.status === 200) {
-            const {items} = res.data;
-            if (items.length > 0) {
-                this.networkId = items[0].id;
-            } else {
-                return false;
+        try {
+            console.log('\n***** getNetworkID *****');
+            const url = `${this.api_base_url_v2}/networks`;
+            const res = await axios.get(url, this.getOptions());
+            if (res.status === 200) {
+                const {items} = res.data;
+                if (items.length > 0) {
+                    this.networkId = items[0].id;
+                } else {
+                    return false;
+                }
+                console.log('Network ID: ', this.networkId);
+                return true;
             }
-            console.log('Network ID: ', this.networkId);
-            return true;
+        } catch (error) {
+            console.log(error);
         }
         return false;
     };
@@ -70,13 +74,17 @@ export class GetroService {
                 const url = `${this.api_base_url_v1}/collections/${this.networkId}/organizations?${query}`;
                 const res = await axios.get(url, this.getOptions());
                 if (res.status === 200) {
-                    const result = [];
                     const { items, meta: { total: total } } = res.data;
                     if (!testMode) {
+                        let result = [];
                         for (const company of items) {
                             const detail = await this.getCompanyDetail(company.slug);
                             if (detail) {
                                 result.push(detail);
+                            }
+                            if (result.length > 29) {
+                                await saveCompanies(result);
+                                result = [];
                             }
                         }
                         await saveCompanies(result);
@@ -87,6 +95,7 @@ export class GetroService {
                     if (items.length < per_page) break;
                 }
             } catch(error) {
+                console.log(error);
                 repeatErr++;
             }
         }
@@ -100,6 +109,7 @@ export class GetroService {
         });
         const url = `${this.api_base_url_v1}/organizations/${slug}?${query}`;
         const res = await axios.get(url, this.getOptions());
+        await sleep(1000);
         if (res.status === 200) {
             const data = res.data;
             return {
@@ -133,13 +143,17 @@ export class GetroService {
                 const url = `${this.api_base_url_v1}/members?${query}`;
                 const res = await axios.get(url, this.getOptions());
                 if (res.status === 200) {
-                    const result = [];
+                    let result = [];
                     const { items, meta: { total } } = res.data;
                     if (!testMode) {
                         for (const company of items) {
                             const detail = await this.getMemberDetail(company.id);
                             if (detail) {
                                 result.push(detail);
+                            }
+                            if (result.length > 30) {
+                                await saveMembers(result);
+                                result = [];       
                             }
                         }
                         await saveMembers(result);
@@ -162,6 +176,7 @@ export class GetroService {
         });
         const url = `${this.api_base_url_v1}/members/${id}?${query}`;
         const res = await axios.get(url, this.getOptions());
+        await sleep(1000);
         if (res.status === 200) {
             const data = res.data;
             return {
