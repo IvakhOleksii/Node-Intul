@@ -38,21 +38,11 @@ export class UserController {
   }
 
   @Authorized()
-  @Post('/update')
+  @Post('/user/update')
   async update(
     @Body() user: User,
     @CurrentUser() authUser: User,
   ) {
-    const {result, error} = await update(authUser.id, user);
-    if (result) {
-      if (user.role === COMPANY)
-        await sendVerification(user.email, user.companyName || '');
-      else
-        await sendVerification(user.email, user.firstname || '');
-    }
-    return {
-      result,
-      error
-    };
+    return await update(authUser.id, user);
   }
 }

@@ -87,7 +87,6 @@ useExpressServer(app, {
         try {
             const token = action.request.headers.authorization.split(" ")[1];
             const data = VerifyJwtToken(token);
-            console.log(data);
             if (data && data.email) {
                 const user = await findUserByEmail(data.email);
                 if (user) {
