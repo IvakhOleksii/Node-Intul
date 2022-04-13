@@ -1,4 +1,5 @@
 import { Controller, Param, Body, Get, Post, Put, Delete, QueryParam, UploadedFile, Authorized, HeaderParam, CurrentUser } from 'routing-controllers';
+import { BullhornService } from '../services/BullhornService';
 import { sendVerification } from '../services/EmailService';
 import { register, login, update } from '../services/User';
 import { User } from '../types/User';
@@ -24,13 +25,27 @@ export class UserController {
  
   @Post('/register')
   async register(@Body() user: User) {
-    const {result, error} = await register(user);
-    if (result) {
+    let data = { ...user };
+    try {
       if (user.role === COMPANY)
         await sendVerification(user.email, user.companyName || '');
       else
         await sendVerification(user.email, user.firstname || '');
+    } catch (error) {
+      return {
+        result: false,
+        error: 'Please check email, email maybe invalid one'
+      };
     }
+    
+    if (user.role === 'candidate') {
+      const res = await (await BullhornService.getClient()).addUserOnBullhorn(user);
+      if (res && res.changedEntityId) {
+        console.log("changedEntityId", res.changedEntityId);
+        data = { ...data, externalId: res.changedEntityId };
+      }
+    }
+    const {result, error} = await register(data);
     return {
       result,
       error

@@ -796,8 +796,40 @@ export class BullhornService {
         }
     }
 
-    async addUserOnBullhorn(data: User) {
+    async addUserOnBullhorn(user: User) {
         console.log('\n***** Adding user on bullhorn *****');
-
+        try {
+            const query = queryString.stringify({
+                BhRestToken: this.BhRestToken,
+                executeFormTriggers: false,
+                highLevelCallStack: '/content/fast-add/Candidate'
+            });
+            const data = {
+                description: null,
+                firstName: user.firstname,
+                lastName: user.lastname,
+                email: user.email,
+                name: `${user.firstname} ${user.lastname}`,
+                owner: null,
+                source: 'Other',
+                status: 'New Lead',
+                address: {
+                    countryID: 1,
+                    countryName: "United States"
+                }
+            }
+            const url = `${this.restUrl}entity/Candidate?${query}`;
+            console.log(url);
+            const res = await axios.put(url, data, {
+                headers: {
+                    'Content-Type': 'application/json;charset=UTF-8',
+                    'Accept': '*/*'
+                }
+            });
+            return res.data;
+        } catch (error) {
+            console.log(error);
+            return null;
+        }
     }
 }
