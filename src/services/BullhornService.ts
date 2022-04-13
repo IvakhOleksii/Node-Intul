@@ -4,6 +4,7 @@ import queryString from 'query-string';
 import { saveCandidates, saveClientContacts, saveCompanies, saveJobs, saveLeads } from "../utils/BullhornCrud";
 import fs from 'fs';
 import { checkForJobFilter } from "../utils";
+import { User } from "../types/User";
 
 export class BullhornService {
     public static client: BullhornService | null = null;
@@ -793,5 +794,10 @@ export class BullhornService {
                 repeatErr++;
             }
         }
+    }
+
+    async addUserOnBullhorn(data: User) {
+        console.log('\n***** Adding user on bullhorn *****');
+
     }
 }
