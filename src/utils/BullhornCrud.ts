@@ -3,6 +3,8 @@ import { BigQueryService } from "../services/BigQueryService";
 import { DATASET_BULLHORN, DATASET_MAIN, Tables } from "../types/Common";
 import { genUUID, isExistByCondition, isExistByID } from "./";
 import { Candidate } from "../types/Bullhorn";
+import { Job } from "../types/Main";
+import { parseBullhornCandidateToUser, parseBullhornJobToMain } from "./parseEntities";
 
 export const saveCompanies = async (companies: any[]) => {
     const expludeFields = ['address', 'billingAddress', '_score', 'notes','dateAdded', 'dateLastModified'];
@@ -61,6 +63,11 @@ export const saveJobs = async (jobs: any[]) => {
         for (const job of jobs) {
             try {
                 console.log(`Savng job with ID = ${job.id}`);
+                const parsedJob = parseBullhornJobToMain(job);
+                if (parsedJob) {
+                    await migrateJobInTPP(parsedJob);
+                }
+
                 const existing = await isExistByID(`'${job.id}'`, DATASET_BULLHORN, Tables.JOBS);
                 if (existing) {
                     console.log(`Job with ID: ${job.id} exists`);
@@ -223,94 +230,6 @@ export const saveLeads = async (leads: any[]) => {
     }
 }
 
-const parseBullhornCandidateToUser = (data: Candidate) => {
-    if (!data.email) return null;
-
-    const user: User = {
-        externalId: data.id,
-        firstname: data.firstName,
-        lastname: data.lastName,
-        gender: data.gender,
-        email: data.email,
-        role: 'candidate',
-        address1: data.address_address1,
-        address2: data.address_address2,
-        city: data.address_city,
-        state: data.address_state,
-        zip: data.address_zip,
-        resume: undefined,
-        linkedin: undefined,
-        skills: data.primarySkills,
-        expertise: data.specialties, 
-        seniority: data.experience,
-        workspace: data.willRelocate,
-        referredBy: data.referredBy,
-        roles: data.skillSet,
-
-        description: data.description,
-        phone: data.phone || data.workPhone || data.mobile,
-        status: data.status,
-        username: data.username,
-
-        companyName: data.companyName, 
-        companyURL: data.companyURL,
-        revenue: data.salary,
-        dateFounded: data.dateAdded,
-
-        employeeType: data.employeeType,
-        experience: data.experience,
-        hourlyRate: data.hourlyRate,
-        willRelocate: data.willRelocate,
-        ethnicity: data.ethnicity,
-        workAuthorized: data.workAuthorized,
-        disability: data.disability
-    };
-    return user;
-}
-
-
-const parseBullhornCompanyToUser = (data: Candidate) => {
-    if (!data.email) return null;
-
-    const user: User = {
-        externalId: data.id,
-        email: data.email,
-        role: 'candidate',
-        address1: data.address_address1,
-        address2: data.address_address2,
-        city: data.address_city,
-        state: data.address_state,
-        zip: data.address_zip,
-        resume: undefined,
-        linkedin: undefined,
-        skills: data.primarySkills,
-        expertise: data.specialties, 
-        seniority: data.experience,
-        workspace: data.willRelocate,
-        referredBy: data.referredBy,
-        roles: data.skillSet,
-
-        description: data.description,
-        phone: data.phone || data.workPhone || data.mobile,
-        status: data.status,
-        username: data.username,
-
-        companyName: data.companyName, 
-        companyURL: data.companyURL,
-        revenue: data.salary,
-        dateFounded: data.dateAdded,
-
-        employeeType: data.employeeType,
-        experience: data.experience,
-        hourlyRate: data.hourlyRate,
-        willRelocate: data.willRelocate,
-        ethnicity: data.ethnicity,
-        workAuthorized: data.workAuthorized,
-        disability: data.disability
-    };
-    return user;
-}
-
 export const migrateUserInTPP = async (data: User) => {
     try {
         console.log(`Savng User from Bullhorn: bh_id = ${data.externalId}`);
@@ -342,5 +261,39 @@ export const migrateUserInTPP = async (data: User) => {
     } catch (error) {
         console.log(error);
         console.log(`ERROR: Migration Failed Bullhorn User (bh_id=${data.externalId})`);
+    }
+};
+
+export const migrateJobInTPP = async (data: Job) => {
+    try {
+        console.log(`Migrating Job from Bullhorn: bh_id = ${data.externalId}`);
+        const condition = `externalId = '${data.externalId}'`;
+        const dataset = DATASET_MAIN;
+        const table = Tables.JOBS;
+        const id = genUUID();
+        const existing = await isExistByCondition(condition, dataset, table);
+        if (existing) {
+            console.log(`Migration Failed: Bullhorn Job (bh_id=${data.externalId}) is already migrated`);
+            return;
+        }
+        const keys: string[] = Object.keys(data);
+        const values: any = keys.map((k) => `"""${(data as any)[k]}"""`);
+        keys.unshift('id');
+        values.unshift(`"""${id}"""`);
+        const query = `
+            INSERT INTO \`${dataset}.${table}\` (${keys.join(', ')})
+            VALUES (${values.join(', ')})
+        `;
+        console.log(query);
+        const options = {
+            query: query,
+            location: 'US',
+        };
+        const [bgJob] = await BigQueryService.getClient().createQueryJob(options);
+        await bgJob.getQueryResults();
+        console.log(`Migrated Bullhorn Job (bh_id=${data.externalId}) successfully`);
+    } catch (error) {
+        console.log(error);
+        console.log(`ERROR: Migration Failed Bullhorn Job (bh_id=${data.externalId})`);
     }
 };

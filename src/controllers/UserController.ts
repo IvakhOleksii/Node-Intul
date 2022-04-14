@@ -39,7 +39,7 @@ export class UserController {
     }
     
     if (user.role === 'candidate') {
-      const res = await (await BullhornService.getClient()).addUserOnBullhorn(user);
+      const res = await (await BullhornService.getClient()).syncUserTppToBullhorn(user);
       if (res && res.changedEntityId) {
         console.log("changedEntityId", res.changedEntityId);
         data = { ...data, externalId: res.changedEntityId };

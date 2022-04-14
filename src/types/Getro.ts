@@ -40,13 +40,8 @@ export type Job = {
     employment_types?: string;
     expires_at?: string;
     job_functions?: string;
-    liked?: string;
     locations?: string;
-    organization_doman?: string;
     organization_id?: string;
-    organization_logo_url?: string;
-    organization_name?: string;
-    organization_slug?: string;
     passes_filter?: string;
     posted_at?: string;
     slug?: string;

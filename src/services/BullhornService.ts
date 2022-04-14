@@ -350,6 +350,7 @@ export class BullhornService {
                         'Accept': '*/*'
                     }
                 });
+                console.log(url);
                 if (res.status === 200) {
                     const {data} = res.data;
                     total = res.data.total;
@@ -373,7 +374,7 @@ export class BullhornService {
                         location_country_name: d.location?.address?.countryName || null,
                         location_country_code: d.location?.address?.countryCode || null,
                         clientContact: d.clientContat?.id,
-                        // clientCorporationID: d.clientCorporation?.id,
+                        clientCorporationID: d.clientCorporation?.id,
                         interviews: d.interviews?.total || 0,
                         owner: d.owner?.id,
                         date_added: d.dateAdded,
@@ -796,7 +797,7 @@ export class BullhornService {
         }
     }
 
-    async addUserOnBullhorn(user: User) {
+    async syncUserTppToBullhorn(user: User) {
         console.log('\n***** Adding user on bullhorn *****');
         try {
             const query = queryString.stringify({
