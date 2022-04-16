@@ -28,7 +28,11 @@ import {
   DATASET_MAIN,
 } from "../types/Common";
 import { getDataSource } from "../utils";
-import { CompanyFilter, JobFilter } from "../utils/FieldMatch";
+import {
+  CompanyFilter,
+  CompanyFilterKey,
+  JobFilter,
+} from "../utils/FieldMatch";
 
 @JsonController("/api/company")
 export class CompanyController {
@@ -93,25 +97,13 @@ export class CompanyController {
   ): Promise<CompanySearchByFilterResponse> {
     try {
       const { filters, fields, page, count } = body;
-      // const bullhornCompanies = (await this.getCompaniesByFilterFromBullhorn(
-      //   filters,
-      //   fields,
-      //   page,
-      //   count
-      // )) as Company[];
-      // const getroCompanies = (await this.getCompaniesByFilterFromGetro(
-      //   filters,
-      //   fields,
-      //   page,
-      //   count
-      // )) as Company[];
-      let companies: Job[] = await this.getCompaniesFromJoinTable();
-      // if (bullhornCompanies) {
-      //   companies = [...bullhornCompanies]
-      // }
-      // if (getroCompanies) {
-      //   companies = [...companies, ...getroCompanies];
-      // }
+
+      let companies: Job[] = await this.getCompaniesFromJoinTable(
+        filters,
+        fields,
+        count
+      );
+
       const response = {
         companies: companies || [],
         total: companies?.length,
@@ -125,13 +117,45 @@ export class CompanyController {
     }
   }
 
-  async getCompaniesFromJoinTable(): Promise<Company[]> {
+  getConditionsFromFilters = (
+    filters: FilterOption[] | undefined,
+    filterableKey: CompanyFilterKey
+  ) => {
+    const _filters = filters?.filter(
+      (opt) => CompanyFilter[filterableKey]?.[opt.key] != null
+    );
+    if (_filters && _filters?.length > 0) {
+      const _condition = _filters
+        .map(
+          (opt) =>
+            `LOWER(${
+              CompanyFilter.bullhorn[opt.key]
+            }) LIKE '%${opt.value.toLowerCase()}%'`
+        )
+        .join(" AND ");
+      return _condition;
+    }
+    return undefined;
+  };
+
+  getJoinedFields = (fields: string[] | null) => {
+    return fields?.length ? fields.join(", ") : "*";
+  };
+
+  async getCompaniesFromJoinTable(
+    filters: FilterOption[] | undefined,
+    fields: string[] | null,
+    count: number
+  ): Promise<Company[]> {
+    const _fields = this.getJoinedFields(fields);
+    const _conditions = this.getConditionsFromFilters(filters, "joined");
+
     const result = (await BigQueryService.selectQuery(
       DATASET_MAIN,
-      "companies_joined",
-      "*",
-      undefined,
-      undefined
+      Tables.JOINED_COMPANIES,
+      _fields,
+      count,
+      _conditions
     )) as Company[];
     return result;
   }
