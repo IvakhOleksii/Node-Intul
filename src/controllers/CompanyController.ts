@@ -1,83 +1,139 @@
-import { Controller, Param, Body, Get, Post, Put, Delete, QueryParam, JsonController, Authorized } from 'routing-controllers';
-import { BigQueryService } from '../services/BigQueryService';
-import { GetroService } from '../services/GetroService';
-import { DATASET_BULLHORN, DATASET_GETRO, FilterOption, Job, FilterBody, JobSearchByFilterResponse, JobSearchByID, DataSource, Tables, Company, CompanySearchByID, CompanySearchByFilterResponse } from '../types/Common';
-import { getDataSource } from '../utils';
-import { CompanyFilter, JobFilter } from '../utils/FieldMatch';
+import {
+  Controller,
+  Param,
+  Body,
+  Get,
+  Post,
+  Put,
+  Delete,
+  QueryParam,
+  JsonController,
+  Authorized,
+} from "routing-controllers";
+import { BigQueryService } from "../services/BigQueryService";
+import { GetroService } from "../services/GetroService";
+import {
+  DATASET_BULLHORN,
+  DATASET_GETRO,
+  FilterOption,
+  Job,
+  FilterBody,
+  JobSearchByFilterResponse,
+  JobSearchByID,
+  DataSource,
+  Tables,
+  Company,
+  CompanySearchByID,
+  CompanySearchByFilterResponse,
+  DATASET_MAIN,
+} from "../types/Common";
+import { getDataSource } from "../utils";
+import { CompanyFilter, JobFilter } from "../utils/FieldMatch";
 
-@JsonController('/api/company')
+@JsonController("/api/company")
 export class CompanyController {
-  @Get('/search')
+  @Get("/search")
   async searchJobByID(
-    @QueryParam('id') id: string
+    @QueryParam("id") id: string
   ): Promise<CompanySearchByID> {
     const datasource = getDataSource(id);
     if (datasource === DataSource.BULLHORN) {
       const company = await this.getCompanyByIdFromBullhorn(id);
       return {
         company,
-        source: datasource
+        source: datasource,
       };
-    }
-    else if(datasource === DataSource.GETRO) {
+    } else if (datasource === DataSource.GETRO) {
       const company = await this.getCompanyByIdFromGetro(id);
       return {
         company,
-        source: datasource
+        source: datasource,
       };
-    }
-    else {
+    } else {
       return {
         source: DataSource.UNKNOWN,
-        message: 'unsupported id'
+        message: "unsupported id",
       };
     }
   }
 
   async getCompanyByIdFromBullhorn(id: string): Promise<Company | undefined> {
-    const fields = '*';
+    const fields = "*";
     const dataset = DATASET_BULLHORN;
     const table = Tables.COMPANIES;
     const condition = `id = '${id}'`;
-    const result = (await BigQueryService.selectQuery(dataset, table, fields, undefined, condition)) as Company[]; 
+    const result = (await BigQueryService.selectQuery(
+      dataset,
+      table,
+      fields,
+      undefined,
+      condition
+    )) as Company[];
     return result ? result[0] : undefined;
   }
 
   async getCompanyByIdFromGetro(id: string): Promise<Company | undefined> {
-    const fields = '*';
+    const fields = "*";
     const dataset = DATASET_GETRO;
     const table = Tables.COMPANIES;
     const condition = `id = '${id}'`;
-    const result = (await BigQueryService.selectQuery(dataset, table, fields, undefined, condition)) as Company[]; 
+    const result = (await BigQueryService.selectQuery(
+      dataset,
+      table,
+      fields,
+      undefined,
+      condition
+    )) as Company[];
     return result ? result[0] : undefined;
   }
 
-  @Post('/search')
+  @Post("/search")
   async searchByFilter(
     @Body() body: FilterBody
   ): Promise<CompanySearchByFilterResponse> {
     try {
       const { filters, fields, page, count } = body;
-      const bullhornCompanies = (await this.getCompaniesByFilterFromBullhorn(filters, fields, page, count)) as Company[] ;
-      const getroCompanies = (await this.getCompaniesByFilterFromGetro(filters, fields, page, count)) as Company[] ;
-      let companies: Job[] = [];
-      if (bullhornCompanies) {
-        companies = [...bullhornCompanies]
-      }
-      if (getroCompanies) {
-        companies = [...companies, ...getroCompanies];
-      }
+      // const bullhornCompanies = (await this.getCompaniesByFilterFromBullhorn(
+      //   filters,
+      //   fields,
+      //   page,
+      //   count
+      // )) as Company[];
+      // const getroCompanies = (await this.getCompaniesByFilterFromGetro(
+      //   filters,
+      //   fields,
+      //   page,
+      //   count
+      // )) as Company[];
+      let companies: Job[] = await this.getCompaniesFromJoinTable();
+      // if (bullhornCompanies) {
+      //   companies = [...bullhornCompanies]
+      // }
+      // if (getroCompanies) {
+      //   companies = [...companies, ...getroCompanies];
+      // }
       const response = {
-        companies: companies,
+        companies: companies || [],
         total: companies?.length,
-        message: null
+        message: null,
       };
       return response;
     } catch (error) {
       return {
-        message: error
+        message: error,
       };
     }
+  }
+
+  async getCompaniesFromJoinTable(): Promise<Company[]> {
+    const result = (await BigQueryService.selectQuery(
+      DATASET_MAIN,
+      "companies_joined",
+      "*",
+      undefined,
+      undefined
+    )) as Company[];
+    return result;
   }
 
   async getCompaniesByFilterFromBullhorn(
@@ -86,15 +142,28 @@ export class CompanyController {
     page: number,
     count: number
   ) {
-    const _filters = filters?.filter(opt => Object.keys(CompanyFilter.bullhorn).indexOf(opt.key) > -1);
+    const _filters = filters?.filter(
+      (opt) => Object.keys(CompanyFilter.bullhorn).indexOf(opt.key) > -1
+    );
     if (_filters && _filters?.length > 0) {
-      const _fields = fields ? fields.join(', ') : '*';
+      const _fields = fields ? fields.join(", ") : "*";
       const _dataset = DATASET_BULLHORN;
       const _table = Tables.COMPANIES;
       const _condition = _filters
-        .map(opt => `LOWER(${CompanyFilter.bullhorn[opt.key]}) LIKE '%${opt.value.toLowerCase()}%'`)
-        .join(' AND ');
-      const result = await BigQueryService.selectQuery(_dataset, _table, _fields, count, _condition);
+        .map(
+          (opt) =>
+            `LOWER(${
+              CompanyFilter.bullhorn[opt.key]
+            }) LIKE '%${opt.value.toLowerCase()}%'`
+        )
+        .join(" AND ");
+      const result = await BigQueryService.selectQuery(
+        _dataset,
+        _table,
+        _fields,
+        count,
+        _condition
+      );
       return result;
     }
     return null;
@@ -106,15 +175,28 @@ export class CompanyController {
     page: number,
     count: number
   ) {
-    const _filters = filters?.filter(opt => Object.keys(CompanyFilter.getro).indexOf(opt.key) > -1);
+    const _filters = filters?.filter(
+      (opt) => Object.keys(CompanyFilter.getro).indexOf(opt.key) > -1
+    );
     if (_filters && _filters?.length > 0) {
-      const _fields = fields ? fields.join(', ') : '*';
+      const _fields = fields ? fields.join(", ") : "*";
       const _dataset = DATASET_GETRO;
       const _table = Tables.COMPANIES;
       const _condition = _filters
-        .map(opt => `LOWER(${CompanyFilter.getro[opt.key]}) LIKE '%${opt.value.toLowerCase()}%'`)
-        .join(' AND ');
-      const result = await BigQueryService.selectQuery(_dataset, _table, _fields, count, _condition);
+        .map(
+          (opt) =>
+            `LOWER(${
+              CompanyFilter.getro[opt.key]
+            }) LIKE '%${opt.value.toLowerCase()}%'`
+        )
+        .join(" AND ");
+      const result = await BigQueryService.selectQuery(
+        _dataset,
+        _table,
+        _fields,
+        count,
+        _condition
+      );
       return result;
     }
     return null;
