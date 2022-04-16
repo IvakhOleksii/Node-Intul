@@ -44,14 +44,14 @@ export class JobController {
   ): Promise<CandidateSearchByFilterResponse> {
     try {
       const { filters, fields, page, count } = body;
-      const _filters = filters?.filter(opt => Object.keys(USER_FILTER).indexOf(opt.key) > -1) || [];
+      const _filters = filters?.filter(opt => USER_FILTER[opt.key] != null) || [];
       _filters.push({key: 'role', value: 'candidate'});
       if (_filters && _filters?.length > 0) {
         const _fields = fields ? fields.join(' ') : '*';
         const _dataset = DATASET_MAIN;
         const _table = Tables.USER;
         const _condition = _filters
-          .map(opt => `${USER_FILTER[opt.key]} LIKE '%${opt.value}%'`)
+          .map(opt => `LOWER(${USER_FILTER[opt.key]}) LIKE '%${typeof opt.value == "string" ? opt.value.toLowerCase() : opt.value}%'`)
           .join(' AND ');
         const result = await BigQueryService.selectQuery(_dataset, _table, _fields, count, _condition);
         return {
