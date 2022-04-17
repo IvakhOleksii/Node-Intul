@@ -25,7 +25,7 @@ export class JobController {
     try {
       const fields = '*';
       const dataset = DATASET_MAIN;
-      const table = Tables.USER;
+      const table = Tables.JOINED_CANDIDATES;
       const condition = `id = '${id}' AND role = 'candidate'`;
       const result = (await BigQueryService.selectQuery(dataset, table, fields, undefined, condition)) as User[]; 
       return {
@@ -49,7 +49,7 @@ export class JobController {
       if (_filters && _filters?.length > 0) {
         const _fields = fields ? fields.join(' ') : '*';
         const _dataset = DATASET_MAIN;
-        const _table = Tables.USER;
+        const _table = Tables.JOINED_CANDIDATES;
         const _condition = _filters
           .map(opt => `LOWER(${USER_FILTER[opt.key]}) LIKE '%${typeof opt.value == "string" ? opt.value.toLowerCase() : opt.value}%'`)
           .join(' AND ');
