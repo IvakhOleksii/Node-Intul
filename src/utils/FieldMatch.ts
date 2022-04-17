@@ -37,4 +37,5 @@ export const USER_FILTER: any = {
   state: "state",
   skills: "skills",
   expertise: "expertise",
+  status: "status",
 };
