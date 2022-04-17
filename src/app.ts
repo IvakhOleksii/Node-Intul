@@ -11,21 +11,23 @@ import { VerifyJwtToken } from './utils/jwtUtils';
 import { findUserByEmail } from './services/User';
 import multer from 'multer';
 import { genUUID } from './utils';
+import fs from 'fs'
 
 dotenv.config();
 
 const multerStorage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, __dirname + '/../uploads/resumes');
+        const folder = req.body.type || (req as any).type || "resumes";
+        const path =  __dirname + `/../uploads/${folder}`
+        fs.mkdirSync(path, { recursive: true })
+        cb(null, path);
     },
     filename: (req, file, cb) => {
         console.log(file)
         cb(null, genUUID());
     }
 });
-const upload = multer({storage: multerStorage, dest: __dirname + '/../uploads/resumes'});
-
-  
+const upload = multer({ storage: multerStorage });
 
 const getActualRequestDurationInMs = (start: any) => {
     const NS_PER_SEC = 1e9;
@@ -67,10 +69,11 @@ app.use(express.static('uploads'));
 app.use(cors());
 
 app.post('/api/upload', upload.single('file'), (req, res) => {
+    const folder = req.body.type || "resumes";
     if(req.file) {
         res.json({
           result: true,
-          file: `/resumes/${req.file.filename}`
+          file: `/${folder}/${req.file.filename}`
         });
         return;
     }
