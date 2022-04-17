@@ -15,6 +15,8 @@ import fs from 'fs'
 
 dotenv.config();
 
+const ALLOWED_UPLOAD_FOLDERS = ["resumes", "avatars"];
+
 const multerStorage = multer.diskStorage({
     destination: (req, file, cb) => {
         const folder = req.body.type || (req as any).type || "resumes";
@@ -70,6 +72,14 @@ app.use(cors());
 
 app.post('/api/upload', upload.single('file'), (req, res) => {
     const folder = req.body.type || "resumes";
+
+    if(!ALLOWED_UPLOAD_FOLDERS.includes(folder)) {
+        res.status(400).send({
+            message: "Invalid folder"
+        });
+        return;
+    }
+
     if(req.file) {
         res.json({
           result: true,
