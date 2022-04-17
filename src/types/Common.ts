@@ -12,6 +12,7 @@ export enum Tables {
     CANDIDATES = 'Candidates',
     APPLICATIONS = 'Applications',
     SAVEDJOBS = 'SavedJobs',
+    JOINED_COMPANIES = 'companies_joined',
 }
 
 export const DATASET_BULLHORN = config.bullhornDatasetID || '';
