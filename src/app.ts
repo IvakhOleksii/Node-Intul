@@ -26,7 +26,8 @@ const multerStorage = multer.diskStorage({
     },
     filename: (req, file, cb) => {
         console.log(file)
-        cb(null, genUUID());
+        const fileName = genUUID() + path.extname(file.originalname);
+        cb(null, fileName);
     }
 });
 const upload = multer({ storage: multerStorage });
