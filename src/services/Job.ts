@@ -1,8 +1,8 @@
-import { DATASET_MAIN, Tables } from "../types/Common";
+import { ApplyResponse, DATASET_MAIN, Tables } from "../types/Common";
 import { Job, ALLOWED_JOB_KEYS } from "../types/Job";
 import { BigQueryService } from "./BigQueryService";
 
-export const createJob = async (job: Job): Promise<Job> => {
+export const createJob = async (job: Job): Promise<ApplyResponse> => {
   const jobError = validateJob(job);
   if (jobError) {
     throw new Error(jobError);
@@ -12,15 +12,7 @@ export const createJob = async (job: Job): Promise<Job> => {
 
   const dataset = DATASET_MAIN;
   const table = Tables.JOBS;
-  const { result, res, error } = await BigQueryService.insertQuery(dataset, table, sanitizedJob);
-
-  if(result){
-    console.log({res})
-    return sanitizedJob
-  }else{
-    console.log({error})
-    throw error as Error
-  }
+  return await BigQueryService.insertQuery(dataset, table, sanitizedJob);
 }
 
 // TODO: Figure out what we want to make required
