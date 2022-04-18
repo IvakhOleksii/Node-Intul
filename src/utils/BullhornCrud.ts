@@ -15,7 +15,7 @@ export const saveCompanies = async (companies: any[]) => {
                 const existing = await isExistByID(`'${company.id}'`, DATASET_BULLHORN, Tables.COMPANIES);
                 if (existing) {
                     console.log(`Company with ID: ${company.id} exists`);
-                    continue;
+                    return -1;
                 }
                 const keys: string[] = Object.keys(company).filter(k => expludeFields.indexOf(k) === -1 && !!company[k]);
                 const values = keys.map(k => `"""${company[k]}"""`);
@@ -71,7 +71,7 @@ export const saveJobs = async (jobs: any[]) => {
                 const existing = await isExistByID(`'${job.id}'`, DATASET_BULLHORN, Tables.JOBS);
                 if (existing) {
                     console.log(`Job with ID: ${job.id} exists`);
-                    continue;
+                    return -1;
                 }
                 const keys: string[] = Object.keys(job).filter(k => expludeFields.indexOf(k) === -1 && !!job[k]);
                 const values: any = keys.map(k => `"""${job[k]}"""`);
@@ -110,13 +110,12 @@ export const saveClientContacts = async (contacts: any[]) => {
     try {
         for (const contact of contacts) {
             try {
-                console.log(`Savng ClientContact with ID = ${contact.id}`);
+                console.log(`\nSavng ClientContact with ID = ${contact.id}`);
                 const existing = await isExistByID(`'${contact.id}'`, DATASET_BULLHORN, Tables.CONTACTS);
                 if (existing) {
                     console.log(`ClientContact with ID: ${contact.id} exists`);
-                    continue;
+                    return -1;
                 }
-                console.log('------')
                 const keys: string[] = Object.keys(contact).filter(k => expludeFields.indexOf(k) === -1 && !!contact[k]);
                 const values: any = keys.map(k => `"""${contact[k]}"""`);
                 const query = `
@@ -151,7 +150,7 @@ export const saveCandidates = async (candidates: any[]) => {
     try {
         for (const candidate of candidates) {
             try {
-                console.log(`Savng Candidate with ID = ${candidate.id}`);
+                console.log(`\n\nSavng Candidate with ID = ${candidate.id}`);
                 const parsedUser = parseBullhornCandidateToUser(candidate);
                 if (parsedUser) {
                     await migrateUserInTPP(parsedUser);
@@ -160,6 +159,7 @@ export const saveCandidates = async (candidates: any[]) => {
                 const existing = await isExistByID(`'${candidate.id}'`, DATASET_BULLHORN, Tables.CANDIDATES);
                 if (existing) {
                     console.log(`Candidate with ID: ${candidate.id} exists`);
+                    continue;
                 }
                 const keys: string[] = Object.keys(candidate).filter(k => expludeFields.indexOf(k) === -1 && !!candidate[k]);
                 const values: any = keys.map(k => `"""${candidate[k]}"""`);
@@ -200,7 +200,7 @@ export const saveLeads = async (leads: any[]) => {
                 const existing = await isExistByID(`'${lead.id}'`, DATASET_BULLHORN, Tables.LEADS);
                 if (existing) {
                     console.log(`Lead with ID: ${lead.id} exists`);
-                    continue;
+                    return -1;
                 }
                 const keys: string[] = Object.keys(lead).filter(k => expludeFields.indexOf(k) === -1 && !!lead[k]);
                 const values: any = keys.map(k => `"""${lead[k]}"""`);
@@ -249,7 +249,6 @@ export const migrateUserInTPP = async (data: User) => {
             INSERT INTO \`${dataset}.${table}\` (${keys.join(', ')})
             VALUES (${values.join(', ')})
         `;
-        console.log(query);
         const options = {
             query: query,
             location: 'US',

@@ -106,6 +106,9 @@ export class BullhornService {
         const url = `${this.oauth_url}/token?${query}`;
         console.log(url);
         const res = await axios.post(url);
+        console.log(res.status);
+        console.log(res);
+        console.log('============================ \n')
         if (res.status === 200) {
             const {access_token, refresh_token} = res.data;
             this.access_token = access_token;
@@ -113,11 +116,8 @@ export class BullhornService {
             console.log('Access Token: ', this.access_token);
             console.log('Refresh Token: ', this.refresh_token);
             return true;
-        } else if (res.status === 400) {
-            if (await this.getNewAccessToken())
-                return await this.login();
         }
-        return false;
+        return await this.getNewAccessToken();
     };
 
     async getNewAccessToken(): Promise<boolean> {
@@ -130,16 +130,18 @@ export class BullhornService {
                 refresh_token: this.refresh_token
             }, {encode: false});
             const url = `${this.oauth_url}/token?${query}`;
+            console.log('access token url: ', url);
             const res = await axios.post(url);
+            console.log(res.status);
             if (res.status === 200) {
                 const {access_token, refresh_token} = res.data;
                 this.access_token = access_token;
                 this.refresh_token = refresh_token;
-                return true;
+                return await this.login();
             }
             return await this.init();
         } catch (error: any) {
-            console.log(error.message);
+            console.log('Error on getNewAccessToken', error.message);
             return await this.init();
         }
     }
@@ -187,7 +189,7 @@ export class BullhornService {
         return false;
     }
 
-    async getCompanies(testMode = false, count=50, sort='id'): Promise<any> {
+    async getCompanies(testMode = false, count=50, sort='-dateAdded'): Promise<any> {
         console.log('\n***** getAllCompanies *****');
         let offset = 0;
         let total = 100000;
@@ -260,7 +262,8 @@ export class BullhornService {
                         billingAddress_zip: d.bllingAddress?.zip || null,
                     }));
                     if (!testMode) {
-                        await saveCompanies(updatedData);
+                        const res = await saveCompanies(updatedData);
+                        if (res === -1) return -1;
                     }
                     offset += count;
                     repeatErr = 0;
@@ -272,14 +275,14 @@ export class BullhornService {
                     console.log(url);
                     throw "error";
                 }
-            } catch (error) {
-                console.log(error, 'repeatNumber =', repeatErr);
+            } catch (error: any) {
+                console.log(error, '\nrepeatNumber =', repeatErr);
                 repeatErr++;
                 await this.getNewAccessToken();
             }
         }
     }
-    async getJobs(testMode = false, count=1000, sort='id'): Promise<any> {
+    async getJobs(testMode = false, count=1000, sort='-dateAdded'): Promise<any> {
         console.log('\n***** getJobs *****');
         let offset = 0;
         let total = 100000;
@@ -396,11 +399,10 @@ export class BullhornService {
                     if (!testMode) {
                         for (const job of updatedData) {
                             console.log('\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-                            // if (job.address_state && job.title && job.address_city && job.address_state.match(/ok/gi) && checkForJobFilter(job.title, `${job.address_city}, OK`)) {
-                            await saveJobs([job]);
-                            // } else {
-                            //     console.log('JOB doesn\'t meet the qualification! Skipping...')
-                            // }
+                            const res = await saveJobs([job]);
+                            if (res === -1) {
+                                return;
+                            }
                         }
                     }
                     if (total <= offset) break;
@@ -412,8 +414,8 @@ export class BullhornService {
                     console.log(url);
                     throw "error";
                 }
-            } catch (error) {
-                console.log(error, 'repeatNumber =', repeatErr);
+            } catch (error: any) {
+                console.log(error.message, '\nrepeatNumber =', repeatErr);
                 await this.getNewAccessToken();
                 repeatErr++;
             }
@@ -510,7 +512,9 @@ export class BullhornService {
                         skills: d.skills?.data.map((skill: any) => skill.id).join(' | ')
                     }));
                     if (!testMode) {
-                        await saveClientContacts(updatedData);
+                        console.log('\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+                        const res = await saveClientContacts(updatedData);
+                        if (res === -1) return;
                     }
                     offset += count;
                     repeatErr = 0;
@@ -521,15 +525,15 @@ export class BullhornService {
                     console.log(url);
                     throw "error";
                 }
-            } catch (error) {
-                console.log(error, 'repeatNumber =', repeatErr);
+            } catch (error: any) {
+                console.log(error.message, '\nrepeatNumber =', repeatErr);
                 await this.getNewAccessToken();
                 repeatErr++;
             }
         }
     }
 
-    async getCandidates(testMode = false, count=50, sort='-dateAdded'): Promise<any> {
+    async getCandidates(testMode = false, count=150, sort='-dateAdded'): Promise<any> {
         console.log('\n***** getCandidates *****');
         let offset = 0;
         let total = 100000;
@@ -641,7 +645,6 @@ export class BullhornService {
                     sort
                 });
                 const url = `${this.restUrl}search/Candidate?${query}`;
-                console.log(url);
                 const res = await axios.get(url, {
                     headers: {
                         'Content-Type': 'application/json;charset=UTF-8',
@@ -666,7 +669,9 @@ export class BullhornService {
                         specialties: d.specialties?.data.map((specialty: any) => specialty.name).join(' | '),
                     }));
                     if (!testMode) {
-                        await saveCandidates(updatedData);
+                        console.log('\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+                        const res = await saveCandidates(updatedData);
+                        // if (res === -1) return;
                     }
                     offset += count;
                     repeatErr = 0;
@@ -678,14 +683,14 @@ export class BullhornService {
                     throw "error";
                 }
             } catch (error: any) {
-                console.log(error.message, 'repeatNumber =', repeatErr);
+                console.log(error.message, '\nrepeatNumber =', repeatErr);
                 await this.getNewAccessToken();
                 repeatErr++;
             }
         }
     }
 
-    async getLeads(testMode = false, count=50, sort='-dateAdded'): Promise<any> {
+    async getLeads(testMode = false, count=150, sort='-dateAdded'): Promise<any> {
         console.log('\n***** getLeads *****');
         let offset = 0;
         let total = 100000;
@@ -787,7 +792,9 @@ export class BullhornService {
                         specialties: d.specialties?.data.map((specialty: any) => specialty.name).join(' | '),
                     }));
                     if (!testMode) {
-                        await saveLeads(updatedData);
+                        console.log('\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+                        const res = await saveLeads(updatedData);
+                        if (res === -1) return;
                     }
                     offset += count;
                     repeatErr = 0;
@@ -798,8 +805,8 @@ export class BullhornService {
                     console.log(url);
                     throw "error";
                 }
-            } catch (error) {
-                console.log(error, 'repeatNumber =', repeatErr);
+            } catch (error: any) {
+                console.log(error.message, '\nrepeatNumber =', repeatErr);
                 await this.getNewAccessToken();
                 repeatErr++;
             }
@@ -837,8 +844,8 @@ export class BullhornService {
                 }
             });
             return res.data;
-        } catch (error) {
-            console.log(error);
+        } catch (error: any) {
+            console.log(error.message);
             return null;
         }
     }
