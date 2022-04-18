@@ -1,6 +1,7 @@
 import { Controller, Param, Body, Get, Post, Put, Delete, QueryParam, JsonController, Authorized } from 'routing-controllers';
 import { BigQueryService } from '../services/BigQueryService';
 import { GetroService } from '../services/GetroService';
+import { createJob } from '../services/Job';
 import { DATASET_BULLHORN, DATASET_GETRO, FilterOption, Job, FilterBody, JobSearchByFilterResponse, JobSearchByID, DataSource, Tables, ApplyResponse, GetSavedJobsResponse } from '../types/Common';
 import { getDataSource } from '../utils';
 import { JobFilter } from '../utils/FieldMatch';
@@ -123,5 +124,13 @@ export class JobController {
     @QueryParam('candidate') candidate: string,
   ): Promise<GetSavedJobsResponse> {
     return await getSavedJobs(candidate);
+  }
+
+  @Authorized()
+  @Put()
+  async createJob(
+    @Body() body: Job
+  ): Promise<ApplyResponse> {
+    return await createJob(body)
   }
 }
