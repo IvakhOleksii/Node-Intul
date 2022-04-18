@@ -31,15 +31,15 @@ export const saveCompanies = async (companies: any[]) => {
                 const [job] = await BigQueryService.getClient().createQueryJob(options);
                 await job.getQueryResults();
                 console.log(`Saved company with ID = ${company.id} successfully`);
-            } catch (error) {
-                console.log(error);
+            } catch (error: any) {
+                console.log(error.message);
                 console.log(`ERROR: while saving company with ID = ${company.id}`);
             }
         };
 
         return { result: true };
-    } catch (error) {
-        console.log(error);
+    } catch (error: any) {
+        console.log(error.message);
         return { result: false, error };
     }
 }
@@ -79,7 +79,7 @@ export const saveJobs = async (jobs: any[]) => {
                     INSERT INTO \`${DATASET_BULLHORN}.${Tables.JOBS}\` (${keys.join(', ')})
                     VALUES (${values.join(', ')})
                 `;
-                console.log(query);
+                // console.log(query);
                 const options = {
                     query: query,
                     location: 'US',
@@ -87,15 +87,15 @@ export const saveJobs = async (jobs: any[]) => {
                 const [bgJob] = await BigQueryService.getClient().createQueryJob(options);
                 await bgJob.getQueryResults();
                 console.log(`Saved job with ID = ${job.id} successfully`);
-            } catch (error) {
-                console.log(error);
+            } catch (error: any) {
+                console.log(error.message);
                 console.log(`ERROR: while saving job with ID = ${job.id}`);
             }
         };
 
         return { result: true };
-    } catch (error) {
-        console.log(error);
+    } catch (error: any) {
+        console.log(error.message);
         return { result: false, error };
     }
 }
@@ -123,7 +123,6 @@ export const saveClientContacts = async (contacts: any[]) => {
                     INSERT INTO \`${DATASET_BULLHORN}.${Tables.CONTACTS}\` (${keys.join(', ')})
                     VALUES (${values.join(', ')})
                 `;
-                console.log(query);
                 const options = {
                     query: query,
                     location: 'US',
@@ -131,15 +130,15 @@ export const saveClientContacts = async (contacts: any[]) => {
                 const [bgJob] = await BigQueryService.getClient().createQueryJob(options);
                 await bgJob.getQueryResults();
                 console.log(`Saved ClientContact with ID = ${contact.id} successfully`);
-            } catch (error) {
-                console.log(error);
+            } catch (error: any) {
+                console.log(error.message);
                 console.log(`ERROR: while saving ClientContact with ID = ${contact.id}`);
             }
         };
 
         return { result: true };
-    } catch (error) {
-        console.log(error);
+    } catch (error: any) {
+        console.log(error.message);
         return { result: false, error };
     }
 }
@@ -168,7 +167,7 @@ export const saveCandidates = async (candidates: any[]) => {
                     INSERT INTO \`${DATASET_BULLHORN}.${Tables.CANDIDATES}\` (${keys.join(', ')})
                     VALUES (${values.join(', ')})
                 `;
-                console.log(query);
+                // console.log(query);
                 const options = {
                     query: query,
                     location: 'US',
@@ -176,15 +175,15 @@ export const saveCandidates = async (candidates: any[]) => {
                 const [bgJob] = await BigQueryService.getClient().createQueryJob(options);
                 await bgJob.getQueryResults();
                 console.log(`Saved Candidate with ID = ${candidate.id} successfully`);
-            } catch (error) {
-                console.log(error);
+            } catch (error: any) {
+                console.log(error.message);
                 console.log(`ERROR: while saving Candidate with ID = ${candidate.id}`);
             }
         };
 
         return { result: true };
-    } catch (error) {
-        console.log(error);
+    } catch (error: any) {
+        console.log(error.message);
         return { result: false, error };
     }
 }
@@ -217,15 +216,15 @@ export const saveLeads = async (leads: any[]) => {
                 const [bgJob] = await BigQueryService.getClient().createQueryJob(options);
                 await bgJob.getQueryResults();
                 console.log(`Saved Lead with ID = ${lead.id} successfully`);
-            } catch (error) {
-                console.log(error);
+            } catch (error: any) {
+                console.log(error.message);
                 console.log(`ERROR: while saving Lead with ID = ${lead.id}`);
             }
         };
 
         return { result: true };
-    } catch (error) {
-        console.log(error);
+    } catch (error: any) {
+        console.log(error.message);
         return { result: false, error };
     }
 }
@@ -258,8 +257,8 @@ export const migrateUserInTPP = async (data: User) => {
         const [bgJob] = await BigQueryService.getClient().createQueryJob(options);
         await bgJob.getQueryResults();
         console.log(`Saved Bullhorn User (bh_id=${data.externalId}) successfully`);
-    } catch (error) {
-        console.log(error);
+    } catch (error: any) {
+        console.log(error.message);
         console.log(`ERROR: Migration Failed Bullhorn User (bh_id=${data.externalId})`);
     }
 };
@@ -284,7 +283,7 @@ export const migrateJobInTPP = async (data: Job) => {
             INSERT INTO \`${dataset}.${table}\` (${keys.join(', ')})
             VALUES (${values.join(', ')})
         `;
-        console.log(query);
+        // console.log(query);
         const options = {
             query: query,
             location: 'US',
@@ -292,8 +291,8 @@ export const migrateJobInTPP = async (data: Job) => {
         const [bgJob] = await BigQueryService.getClient().createQueryJob(options);
         await bgJob.getQueryResults();
         console.log(`Migrated Bullhorn Job (bh_id=${data.externalId}) successfully`);
-    } catch (error) {
-        console.log(error);
+    } catch (error: any) {
+        console.log(error.message);
         console.log(`ERROR: Migration Failed Bullhorn Job (bh_id=${data.externalId})`);
     }
 };

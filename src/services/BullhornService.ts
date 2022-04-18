@@ -3,7 +3,7 @@ import config from "../config";
 import queryString from 'query-string';
 import { saveCandidates, saveClientContacts, saveCompanies, saveJobs, saveLeads } from "../utils/BullhornCrud";
 import fs from 'fs';
-import { checkForJobFilter } from "../utils";
+import { checkForJobFilter, sleep } from "../utils";
 import { User } from "../types/User";
 
 export class BullhornService {
@@ -138,42 +138,51 @@ export class BullhornService {
                 return true;
             }
             return await this.init();
-        } catch (error) {
-            console.log(error);
+        } catch (error: any) {
+            console.log(error.message);
             return await this.init();
         }
     }
 
     async login(): Promise<boolean> {
         console.log('\n***** login *****');
-        const query = queryString.stringify({
-            version: '*',
-            access_token: this.access_token,
+        let retryNo = 0;
+        while (retryNo < 3) {
+            try {
+                const query = queryString.stringify({
+                    version: '*',
+                    access_token: this.access_token,
 
-        }, {encode: false})
-        const url = `${this.api_base_url}/login?${query}`
-        const res = await axios.post(url);
-        if (res.status === 200) {
-            const {BhRestToken, restUrl} = res.data;
-            this.BhRestToken = BhRestToken;
-            this.restUrl = restUrl;
-            this.corpToken = restUrl.split('/')[4];
-            console.log('BhRestToken: ', this.BhRestToken);
-            console.log('restUrl: ', this.restUrl);
-            console.log('corpToken: ', this.corpToken);
+                }, {encode: false})
+                const url = `${this.api_base_url}/login?${query}`
+                const res = await axios.post(url);
+                if (res.status === 200) {
+                    const {BhRestToken, restUrl} = res.data;
+                    this.BhRestToken = BhRestToken;
+                    this.restUrl = restUrl;
+                    this.corpToken = restUrl.split('/')[4];
+                    console.log('BhRestToken: ', this.BhRestToken);
+                    console.log('restUrl: ', this.restUrl);
+                    console.log('corpToken: ', this.corpToken);
 
-            await this.setCookie({
-                auth_code: this.auth_code,
-                access_token: this.access_token,
-                refresh_token: this.refresh_token,
-                BhRestToken: this.BhRestToken,
-                restUrl: this.restUrl,
-            });
-            return true;
-        }
-        else if (res.status === 400) {
-            if (await this.getNewAccessToken())
-                return await this.login();
+                    await this.setCookie({
+                        auth_code: this.auth_code,
+                        access_token: this.access_token,
+                        refresh_token: this.refresh_token,
+                        BhRestToken: this.BhRestToken,
+                        restUrl: this.restUrl,
+                    });
+                    return true;
+                }
+                else if (res.status === 400) {
+                    await this.getNewAccessToken()
+                }
+            } catch (error: any) {
+                console.log(error.message);
+                await sleep(1000);
+                retryNo++;
+                console.log('\nxxxxx login failed: retrying now');
+            }
         }
         return false;
     }
@@ -270,7 +279,7 @@ export class BullhornService {
             }
         }
     }
-    async getJobs(testMode = false, count=50, sort='id'): Promise<any> {
+    async getJobs(testMode = false, count=1000, sort='id'): Promise<any> {
         console.log('\n***** getJobs *****');
         let offset = 0;
         let total = 100000;
@@ -386,12 +395,12 @@ export class BullhornService {
                     }));
                     if (!testMode) {
                         for (const job of updatedData) {
-                            console.log(job.address_state, job.title, job.address_city);
-                            if (job.address_state && job.title && job.address_city && job.address_state.match(/ok/gi) && checkForJobFilter(job.title, `${job.address_city}, OK`)) {
-                                await saveJobs([job]);
-                            } else {
-                                console.log('JOB doesn\'t meet the qualification! Skipping...')
-                            }
+                            console.log('\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+                            // if (job.address_state && job.title && job.address_city && job.address_state.match(/ok/gi) && checkForJobFilter(job.title, `${job.address_city}, OK`)) {
+                            await saveJobs([job]);
+                            // } else {
+                            //     console.log('JOB doesn\'t meet the qualification! Skipping...')
+                            // }
                         }
                     }
                     if (total <= offset) break;
@@ -668,8 +677,8 @@ export class BullhornService {
                     console.log(url);
                     throw "error";
                 }
-            } catch (error) {
-                console.log(error, 'repeatNumber =', repeatErr);
+            } catch (error: any) {
+                console.log(error.message, 'repeatNumber =', repeatErr);
                 await this.getNewAccessToken();
                 repeatErr++;
             }
