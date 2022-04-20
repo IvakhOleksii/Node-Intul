@@ -12,6 +12,7 @@ export enum Tables {
     CANDIDATES = 'Candidates',
     APPLICATIONS = 'Applications',
     SAVEDJOBS = 'SavedJobs',
+    SAVED_COMPANIES = 'SavedCompanies',
     JOINED_COMPANIES = 'companies_joined',
     JOINED_CANDIDATES = 'candidates_joined',
 }
@@ -57,6 +58,11 @@ export type ApplyResponse = {
     result: boolean;
     message?: any;
 }
+
+export type GetSavedCompaniesResponse = {
+    companies?: Company[];
+} & ApplyResponse
+
 
 export type GetSavedJobsResponse = {
     jobs?: Job[];

@@ -9,8 +9,10 @@ import {
   QueryParam,
   JsonController,
   Authorized,
+  CurrentUser,
 } from "routing-controllers";
 import { BigQueryService } from "../services/BigQueryService";
+import { getSavedCompanies, saveCompany } from "../services/Company";
 import { GetroService } from "../services/GetroService";
 import {
   DATASET_BULLHORN,
@@ -26,7 +28,10 @@ import {
   CompanySearchByID,
   CompanySearchByFilterResponse,
   DATASET_MAIN,
+  ApplyResponse,
+  GetSavedCompaniesResponse,
 } from "../types/Common";
+import { User } from "../types/User";
 import { getDataSource } from "../utils";
 import {
   CompanyFilter,
@@ -59,6 +64,24 @@ export class CompanyController {
         message: "unsupported id",
       };
     }
+  }
+
+  @Authorized()
+  @Put('/save')
+  async save(
+    @CurrentUser() authUser: User,
+    @Body() body: { company: string, candidate?: string }
+  ): Promise<ApplyResponse> {
+    return await saveCompany(body.company, authUser.id || body.candidate!);
+  }
+
+  @Authorized()
+  @Get('/saved')
+  async savedCompanies(
+    @CurrentUser() authUser: User,
+    @QueryParam('candidate') candidate: string
+  ): Promise<GetSavedCompaniesResponse> {
+    return await getSavedCompanies(authUser.id || candidate);
   }
 
   async getCompanyByIdFromBullhorn(id: string): Promise<Company | undefined> {
