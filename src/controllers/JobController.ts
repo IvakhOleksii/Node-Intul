@@ -1,8 +1,9 @@
-import { Controller, Param, Body, Get, Post, Put, Delete, QueryParam, JsonController, Authorized } from 'routing-controllers';
+import { Controller, Param, Body, Get, Post, Put, Delete, QueryParam, JsonController, Authorized, CurrentUser } from 'routing-controllers';
 import { BigQueryService } from '../services/BigQueryService';
 import { GetroService } from '../services/GetroService';
-import { createJob } from '../services/Job';
+import { createJob, getAppliedJobsByUser } from '../services/Job';
 import { DATASET_BULLHORN, DATASET_GETRO, FilterOption, Job, FilterBody, JobSearchByFilterResponse, JobSearchByID, DataSource, Tables, ApplyResponse, GetSavedJobsResponse } from '../types/Common';
+import { User } from '../types/User';
 import { getDataSource } from '../utils';
 import { JobFilter } from '../utils/FieldMatch';
 import { getCandidatesOnJob, getSavedJobs, saveApplication, saveJob } from '../utils/MainCrud';
@@ -116,6 +117,15 @@ export class JobController {
     @QueryParam('job') job: string
   ): Promise<ApplyResponse> {
     return await saveJob(job, candidate);
+  }
+
+  @Authorized()
+  @Get("/applied")
+  async getAppliedJobs(
+    @CurrentUser() authUser: User,
+    @QueryParam('candidate') candidate: string,
+  ) {
+    return await getAppliedJobsByUser(candidate || authUser.id!);
   }
 
   @Authorized()
