@@ -12,7 +12,7 @@ import {
   CurrentUser,
 } from "routing-controllers";
 import { BigQueryService } from "../services/BigQueryService";
-import { saveCompany } from "../services/Company";
+import { getSavedCompanies, saveCompany } from "../services/Company";
 import { GetroService } from "../services/GetroService";
 import {
   DATASET_BULLHORN,
@@ -29,6 +29,7 @@ import {
   CompanySearchByFilterResponse,
   DATASET_MAIN,
   ApplyResponse,
+  GetSavedCompaniesResponse,
 } from "../types/Common";
 import { User } from "../types/User";
 import { getDataSource } from "../utils";
@@ -74,6 +75,14 @@ export class CompanyController {
     return await saveCompany(body.company, authUser.id || body.candidate!);
   }
 
+  @Authorized()
+  @Get('/saved')
+  async savedCompanies(
+    @CurrentUser() authUser: User,
+    @QueryParam('candidate') candidate: string
+  ): Promise<GetSavedCompaniesResponse> {
+    return await getSavedCompanies(authUser.id || candidate);
+  }
 
   async getCompanyByIdFromBullhorn(id: string): Promise<Company | undefined> {
     const fields = "*";

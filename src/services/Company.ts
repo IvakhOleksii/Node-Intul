@@ -38,3 +38,31 @@ export const saveCompany = async (company: string, candidate: string) => {
     return {result: false, message: e};
   }
 }
+
+export const getSavedCompanies = async (candidate: string) => {
+  try{
+    const dataset = DATASET_MAIN
+    const table = Tables.SAVED_COMPANIES;
+    const query = `
+      SELECT *
+      FROM \`${dataset}.${table}\` as savedCompany
+      LEFT JOIN \`${dataset}.${Tables.JOINED_COMPANIES}\` as joinedCompany
+      ON joinedCompany.bh_id = savedCompany.company OR joinedCompany.getro_id = savedCompany.company
+      WHERE savedCompany.candidate = '${candidate}'
+    `;
+    console.log(query);
+    const options = {
+      query,
+      location: 'US',
+    };
+    const [job] = await BigQueryService.getClient().createQueryJob(options);
+    const [rows] = await job.getQueryResults();
+    return {
+      companies: rows,
+      result: true,
+    }
+  }catch(e){
+    console.log(e);
+    return {result: false, message: e};
+  }
+}

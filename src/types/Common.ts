@@ -59,6 +59,11 @@ export type ApplyResponse = {
     message?: any;
 }
 
+export type GetSavedCompaniesResponse = {
+    companies?: Company[];
+} & ApplyResponse
+
+
 export type GetSavedJobsResponse = {
     jobs?: Job[];
     result: boolean;
