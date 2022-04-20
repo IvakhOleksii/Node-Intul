@@ -26,7 +26,9 @@ export type Job = {
   postedAt?: string;
 };
 
-export const ALLOWED_JOB_KEYS = new Set<keyof Job>([
+export type JobKey = keyof Job;
+
+export const ALLOWED_JOB_KEYS = new Set<JobKey>([
   "id",
   "externalId",
   "description",
