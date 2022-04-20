@@ -12,6 +12,7 @@ export enum Tables {
     CANDIDATES = 'Candidates',
     APPLICATIONS = 'Applications',
     SAVEDJOBS = 'SavedJobs',
+    SAVED_COMPANIES = 'SavedCompanies',
     JOINED_COMPANIES = 'companies_joined',
     JOINED_CANDIDATES = 'candidates_joined',
 }
