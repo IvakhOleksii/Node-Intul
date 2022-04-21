@@ -26,7 +26,7 @@
     "dev-win": "nodemon src/app.ts",
     "build": "export GOOGLE_APPLICATION_CREDENTIALS='./src/config/service-account-file.json' && tsc && cp -R ./src/templates ./dist",
     "build-win": "tsc",
-    "start": "cp -R ./src/templates ./dist && export GOOGLE_APPLICATION_CREDENTIALS='./src/config/service-account-file.json' && node dist/app.js",
+    "start": "export GOOGLE_APPLICATION_CREDENTIALS='./src/config/service-account-file.json' && node dist/app.js",
     "bullhorn_get_companies": "npm run build && node ./dist/cronjobs/bullhorn_get_companies",
     "bullhorn_get_jobs": "npm run build && node ./dist/cronjobs/bullhorn_get_jobs",
     "bullhorn_get_contacts": "npm run build && node ./dist/cronjobs/bullhorn_get_contacts",
