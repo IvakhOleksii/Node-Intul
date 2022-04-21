@@ -31,6 +31,7 @@ import {
   AdvancedFilterOption,
   DATASET_MAIN,
   DataSources,
+  Operator,
 } from "../types/Common";
 import { ALLOWED_GETRO_FILTERS } from "../types/Getro";
 import { ALLOWED_JOB_KEYS, JobKey } from "../types/Job";
@@ -104,7 +105,7 @@ export class JobController {
     @Body() body: FilterBody & { datasource?: DataSources }
   ): Promise<JobSearchByFilterResponse> {
     try {
-      const { filters, fields, page, count, datasource } = body;
+      const { filters, fields, page, count, datasource, operator } = body;
 
       const _datasource = datasource ?? "bullhorn";
 
@@ -113,28 +114,28 @@ export class JobController {
       switch (_datasource) {
         case "bullhorn":
           jobsToGet.push(
-            this.getJobsByFilterFromBullhorn(filters, fields, page, count)
+            this.getJobsByFilterFromBullhorn(filters, fields, page, count, operator)
           );
           break;
         case "getro":
           jobsToGet.push(
-            this.getJobsByFilterFromGetro(filters, fields || [], count)
+            this.getJobsByFilterFromGetro(filters, fields || [], count, operator)
           );
           break;
         case "main":
           jobsToGet.push(
-            this.getJobsByFilterFromMain(filters, fields || [], count)
+            this.getJobsByFilterFromMain(filters, fields || [], count, operator)
           );
           break;
         case "all":
           jobsToGet.push(
-            this.getJobsByFilterFromBullhorn(filters, fields, page, count)
+            this.getJobsByFilterFromBullhorn(filters, fields, page, count, operator)
           );
           jobsToGet.push(
-            this.getJobsByFilterFromGetro(filters, fields || [], count)
+            this.getJobsByFilterFromGetro(filters, fields || [], count, operator)
           );
           jobsToGet.push(
-            this.getJobsByFilterFromMain(filters, fields || [], count)
+            this.getJobsByFilterFromMain(filters, fields || [], count, operator)
           );
           break;
         default:
@@ -192,6 +193,7 @@ export class JobController {
   getFilterConditions = (
     filters: AdvancedFilterOption[],
     specialHandlers: Dictionary<(key: string, value: string) => string> = {},
+    operator: Operator = "OR",
     nonStringFields: Set<string> = new Set()
   ) => {
     const conditions = filters.map((opt) => {
@@ -209,14 +211,15 @@ export class JobController {
         return this.determineCondition(opt.key, opt.value, specialHandlers);
       }
     });
-    return conditions.join(" AND ");
+    return conditions.join(` ${operator} `);
   };
 
   // TODO: Extract all of these query/filter logic into its own service
   async getJobsByFilterFromMain(
     filters: AdvancedFilterOption[] = [],
     fields: string[] | undefined,
-    count: number | undefined
+    count: number | undefined,
+    operator: Operator = "OR"
   ) {
     const _filters = filters.filter((filter) =>
       ALLOWED_JOB_KEYS.has(filter.key as JobKey)
@@ -233,7 +236,7 @@ export class JobController {
       ? filteredFields.join(", ")
       : `${alias}.*, ${companyAlias}.bh_url as company_url, ${companyAlias}.name as company_name, ${companyAlias}.logo as company_logo`;
 
-    const condition = this.getFilterConditions(_filters);
+    const condition = this.getFilterConditions(_filters, operator);
     const dataset = DATASET_MAIN;
     const table = Tables.JOBS;
 
@@ -256,7 +259,8 @@ export class JobController {
   async getJobsByFilterFromGetro(
     filters: AdvancedFilterOption[] = [],
     fields: string[] | undefined,
-    count: number | undefined
+    count: number | undefined,
+    operator: Operator = "OR"
   ) {
     const _filters = filters.filter((filter) =>
       ALLOWED_GETRO_FILTERS.has(filter.key as keyof Job)
@@ -267,7 +271,7 @@ export class JobController {
     );
     const _fields = filteredFields?.length ? filteredFields.join(", ") : "*";
 
-    const condition = this.getFilterConditions(_filters);
+    const condition = this.getFilterConditions(_filters, operator);
     const dataset = DATASET_GETRO;
     const table = Tables.JOBS;
 
@@ -284,11 +288,13 @@ export class JobController {
     filters: AdvancedFilterOption[] | undefined,
     fields: string[] | null,
     page: number,
-    count: number
+    count: number,
+    operator: Operator = "OR"
   ) {
     if (filters?.every((opt) => JobFilter.bullhorn[opt.key] != null)) {
       const _dataset = DATASET_BULLHORN;
       const _table = Tables.JOBS;
+
       const _specialHandlers = {
         clientCorporationID: (key: string, value: string) =>
           `${key} = REPLACE("${value}", "bl-", "")`,
@@ -297,7 +303,7 @@ export class JobController {
         key: JobFilter.bullhorn[filter.key],
         value: filter.value,
       }));
-      const _condition = this.getFilterConditions(_filters, _specialHandlers);
+      const _condition = this.getFilterConditions(_filters, _specialHandlers, operator);
 
       const alias = "bh_jobs";
       const companyAlias = "company";

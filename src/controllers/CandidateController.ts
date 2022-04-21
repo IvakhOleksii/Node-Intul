@@ -1,9 +1,11 @@
-import { Controller, Param, Body, Get, Post, Put, Delete, QueryParam, JsonController, Authorized } from 'routing-controllers';
+import { Controller, Param, Body, Get, Post, Put, Delete, QueryParam, JsonController, Authorized, CurrentUser } from 'routing-controllers';
 import { BigQueryService } from '../services/BigQueryService';
+import { saveCandidate, getSavedCandidates } from '../services/Candidate';
 import { GetroService } from '../services/GetroService';
 import { FilterBody, Tables, GetSavedJobsResponse, CandidateSearchByFilterResponse, CandidateSearchByIdResponse, DATASET_MAIN, Company, UpdateComapnyProfileResponse } from '../types/Common';
 import { User } from '../types/User';
 import { getDataSource } from '../utils';
+import { COMPANY } from '../utils/constant';
 import { JobFilter, USER_FILTER } from '../utils/FieldMatch';
 import { getSavedJobs, saveApplication, saveJob } from '../utils/MainCrud';
 
@@ -43,7 +45,7 @@ export class JobController {
     @Body() body: FilterBody
   ): Promise<CandidateSearchByFilterResponse> {
     try {
-      const { filters, fields, page, count } = body;
+      const { filters, fields, page, count, operator } = body;
       const _filters = filters?.filter(opt => USER_FILTER[opt.key] != null) || [];
       _filters.push({key: 'role', value: 'candidate'});
       if (_filters && _filters?.length > 0) {
@@ -52,7 +54,7 @@ export class JobController {
         const _table = Tables.JOINED_CANDIDATES;
         const _condition = _filters
           .map(opt => `LOWER(${USER_FILTER[opt.key]}) LIKE '%${typeof opt.value == "string" ? opt.value.toLowerCase() : opt.value}%'`)
-          .join(' AND ');
+          .join(` ${operator} `);
         const result = await BigQueryService.selectQuery(_dataset, _table, _fields, count, _condition);
         return {
           candidates: result || []
@@ -65,5 +67,30 @@ export class JobController {
       console.log(error);
       return { message: error };
     }
+  }
+
+  @Authorized()
+  @Put('/save')
+  async save(
+    @Body() body: { candidate: string, company: string },
+    @CurrentUser() authUser: User,
+  ) {
+    if(authUser.role === COMPANY) {
+      return await saveCandidate(body.candidate, body.company || authUser.id!);
+    }else{
+      return {
+        result: false,
+        message: 'You are not a company'
+      }
+    }
+  }
+
+  @Authorized()
+  @Get('/saved')
+  async savedCandidates(
+    @CurrentUser() authUser: User,
+    @QueryParam('candidate') candidate: string,
+  ) {
+    return await getSavedCandidates(candidate || authUser.id!);
   }
 }

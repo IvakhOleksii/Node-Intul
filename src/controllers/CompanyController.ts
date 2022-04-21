@@ -30,6 +30,7 @@ import {
   DATASET_MAIN,
   ApplyResponse,
   GetSavedCompaniesResponse,
+  Operator,
 } from "../types/Common";
 import { User } from "../types/User";
 import { getDataSource } from "../utils";
@@ -119,12 +120,13 @@ export class CompanyController {
     @Body() body: FilterBody
   ): Promise<CompanySearchByFilterResponse> {
     try {
-      const { filters, fields, page, count } = body;
+      const { filters, fields, page, count, operator } = body;
 
       let companies: Job[] = await this.getCompaniesFromJoinTable(
         filters,
         fields,
-        count
+        count,
+        operator
       );
 
       const response = {
@@ -142,7 +144,8 @@ export class CompanyController {
 
   getConditionsFromFilters = (
     filters: FilterOption[] | undefined,
-    filterableKey: CompanyFilterKey
+    filterableKey: CompanyFilterKey,
+    operator: Operator = "OR"
   ) => {
     const _filters = filters?.filter(
       (opt) => CompanyFilter[filterableKey]?.[opt.key] != null
@@ -155,7 +158,7 @@ export class CompanyController {
               CompanyFilter.bullhorn[opt.key]
             }) LIKE '%${opt.value.toLowerCase()}%'`
         )
-        .join(" AND ");
+        .join(` ${operator} `);
       return _condition;
     }
     return undefined;
@@ -168,10 +171,15 @@ export class CompanyController {
   async getCompaniesFromJoinTable(
     filters: FilterOption[] | undefined,
     fields: string[] | null,
-    count: number
+    count: number,
+    operator: Operator = "OR"
   ): Promise<Company[]> {
     const _fields = this.getJoinedFields(fields);
-    const _conditions = this.getConditionsFromFilters(filters, "joined");
+    const _conditions = this.getConditionsFromFilters(
+      filters,
+      "joined",
+      operator
+    );
 
     const result = (await BigQueryService.selectQuery(
       DATASET_MAIN,
@@ -187,7 +195,8 @@ export class CompanyController {
     filters: FilterOption[] | undefined,
     fields: string[] | null,
     page: number,
-    count: number
+    count: number,
+    operator: Operator = "OR"
   ) {
     const _filters = filters?.filter(
       (opt) => Object.keys(CompanyFilter.bullhorn).indexOf(opt.key) > -1
@@ -203,7 +212,7 @@ export class CompanyController {
               CompanyFilter.bullhorn[opt.key]
             }) LIKE '%${opt.value.toLowerCase()}%'`
         )
-        .join(" AND ");
+        .join(` ${operator} `);
       const result = await BigQueryService.selectQuery(
         _dataset,
         _table,
@@ -220,7 +229,8 @@ export class CompanyController {
     filters: FilterOption[] | undefined,
     fields: string[] | null,
     page: number,
-    count: number
+    count: number,
+    operator: Operator = "OR"
   ) {
     const _filters = filters?.filter(
       (opt) => Object.keys(CompanyFilter.getro).indexOf(opt.key) > -1
@@ -236,7 +246,7 @@ export class CompanyController {
               CompanyFilter.getro[opt.key]
             }) LIKE '%${opt.value.toLowerCase()}%'`
         )
-        .join(" AND ");
+        .join(` ${operator} `);
       const result = await BigQueryService.selectQuery(
         _dataset,
         _table,

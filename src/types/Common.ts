@@ -17,6 +17,7 @@ export enum Tables {
   APPLICATIONS = "Applications",
   SAVEDJOBS = "SavedJobs",
   SAVED_COMPANIES = "SavedCompanies",
+  SAVED_CANDIDATES = "SavedCandidates",
   JOINED_COMPANIES = "companies_joined",
   JOINED_CANDIDATES = "candidates_joined",
   CATEGORIES = "Categories",
@@ -35,7 +36,7 @@ export enum DataSource {
 
 export type DataSources = "bullhorn" | "getro" | "main" | "all";
 
-type Operator = "AND" | "OR";
+export type Operator = "AND" | "OR";
 
 export type FilterOption = {
   key: string;
@@ -53,6 +54,7 @@ export type FilterBody = {
   fields: string[] | null;
   page: number;
   count: number;
+  operator?: Operator;
 };
 
 type CountFilterResponse = {

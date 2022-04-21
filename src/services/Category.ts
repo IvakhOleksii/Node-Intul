@@ -3,13 +3,14 @@ import {
   Category,
   CATEGORY_NON_STRING_FIELDS,
 } from "../types/Category";
-import { DATASET_BULLHORN, FilterOption, Tables } from "../types/Common";
+import { DATASET_BULLHORN, FilterOption, Operator, Tables } from "../types/Common";
 import { BigQueryService } from "./BigQueryService";
 
 export const getCategoriesByFilter = async (
   filters: FilterOption[] = [],
   fields?: string[],
-  count?: number
+  count?: number,
+  operator: Operator = "OR"
 ) => {
   const _filters = filters.filter((filter) => {
     return ALLOWED_CATEGORY_FILTER_KEYS.has(filter.key as any);
@@ -24,7 +25,7 @@ export const getCategoriesByFilter = async (
         ? `LOWER(${filter.key}) LIKE '%${filter.value.toLowerCase()}%'`
         : `${filter.key} = ${filter.value}`;
     })
-    .join(" AND ");
+    .join(` ${operator} `);
 
   const _dataset = DATASET_BULLHORN;
   const _table = Tables.CATEGORIES;
