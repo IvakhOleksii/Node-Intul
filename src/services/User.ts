@@ -2,7 +2,7 @@ import { User, USERKEYS } from "../types/User";
 import { BigQueryService } from "./BigQueryService";
 import { DATASET_MAIN, Tables } from "../types/Common";
 import { COORDINATOR, ROLES } from "../utils/constant";
-import { genUUID, justifyData } from "../utils";
+import { genUUID, isExistByCondition, justifyData } from "../utils";
 
 const isNullOrEmpty = (value: any) => {
     return !value || (value && !`${value}`.trim())

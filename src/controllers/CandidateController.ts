@@ -1,9 +1,11 @@
-import { Controller, Param, Body, Get, Post, Put, Delete, QueryParam, JsonController, Authorized } from 'routing-controllers';
+import { Controller, Param, Body, Get, Post, Put, Delete, QueryParam, JsonController, Authorized, CurrentUser } from 'routing-controllers';
 import { BigQueryService } from '../services/BigQueryService';
+import { saveCandidate, getSavedCandidates } from '../services/Candidate';
 import { GetroService } from '../services/GetroService';
 import { FilterBody, Tables, GetSavedJobsResponse, CandidateSearchByFilterResponse, CandidateSearchByIdResponse, DATASET_MAIN, Company, UpdateComapnyProfileResponse } from '../types/Common';
 import { User } from '../types/User';
 import { getDataSource } from '../utils';
+import { COMPANY } from '../utils/constant';
 import { JobFilter, USER_FILTER } from '../utils/FieldMatch';
 import { getSavedJobs, saveApplication, saveJob } from '../utils/MainCrud';
 
@@ -65,5 +67,30 @@ export class JobController {
       console.log(error);
       return { message: error };
     }
+  }
+
+  @Authorized()
+  @Put('/save')
+  async save(
+    @Body() body: { candidate: string, company: string },
+    @CurrentUser() authUser: User,
+  ) {
+    if(authUser.role === COMPANY) {
+      return await saveCandidate(body.candidate, body.company || authUser.id!);
+    }else{
+      return {
+        result: false,
+        message: 'You are not a company'
+      }
+    }
+  }
+
+  @Authorized()
+  @Get('/saved')
+  async savedCandidates(
+    @CurrentUser() authUser: User,
+    @QueryParam('candidate') candidate: string,
+  ) {
+    return await getSavedCandidates(candidate || authUser.id!);
   }
 }
