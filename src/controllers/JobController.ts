@@ -279,17 +279,30 @@ export class JobController {
     count: number
   ) {
     if (filters?.every((opt) => JobFilter.bullhorn[opt.key] != null)) {
-      const _fields = fields ? fields.join(", ") : "*";
       const _dataset = DATASET_BULLHORN;
       const _table = Tables.JOBS;
       const _condition = this.getFilterConditions(filters);
+
+      const alias = "bh_jobs";
+      const companyAlias = "company";
+
+      const _fields = fields?.length
+        ? fields.join(", ")
+        : `${alias}.*, ${companyAlias}.bh_url as company_url, ${companyAlias}.name as company_name, ${companyAlias}.logo as company_logo`;
+
+      const _join = `
+        LEFT JOIN \`${DATASET_MAIN}.${Tables.JOINED_COMPANIES}\` as ${companyAlias} 
+        ON CONCAT("bl-", ${alias}.clientCorporationID) = ${companyAlias}.bh_id
+        `;
 
       return await BigQueryService.selectQuery(
         _dataset,
         _table,
         _fields,
         count,
-        _condition
+        _condition,
+        _join,
+        alias
       );
     }
     throw "invalid filter options";
