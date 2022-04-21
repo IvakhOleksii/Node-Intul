@@ -36,7 +36,7 @@ export enum DataSource {
 
 export type DataSources = "bullhorn" | "getro" | "main" | "all";
 
-type Operator = "AND" | "OR";
+export type Operator = "AND" | "OR";
 
 export type FilterOption = {
   key: string;
@@ -54,6 +54,7 @@ export type FilterBody = {
   fields: string[] | null;
   page: number;
   count: number;
+  operator?: Operator;
 };
 
 type CountFilterResponse = {
