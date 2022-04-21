@@ -1,7 +1,7 @@
-import { Controller, Param, Body, Get, Post, Put, Delete, QueryParam, JsonController, Authorized, CurrentUser } from 'routing-controllers';
+import { Controller, Param, Body, Get, Post, Put, Delete, QueryParam, JsonController, Authorized, CurrentUser, Patch } from 'routing-controllers';
 import { BigQueryService } from '../services/BigQueryService';
 import { GetroService } from '../services/GetroService';
-import { createJob, getAppliedJobsByUser } from '../services/Job';
+import { createJob, getAppliedJobsByUser, updateJob } from '../services/Job';
 import { DATASET_BULLHORN, DATASET_GETRO, FilterOption, Job, FilterBody, JobSearchByFilterResponse, JobSearchByID, DataSource, Tables, ApplyResponse, GetSavedJobsResponse } from '../types/Common';
 import { User } from '../types/User';
 import { getDataSource } from '../utils';
@@ -117,6 +117,14 @@ export class JobController {
     @QueryParam('job') job: string
   ): Promise<ApplyResponse> {
     return await saveJob(job, candidate);
+  }
+
+  @Authorized()
+  @Patch()
+  async update(
+    @Body() body: Partial<Job> & { id: string }
+  ): Promise<ApplyResponse> {
+    return await updateJob(body)
   }
 
   @Authorized()

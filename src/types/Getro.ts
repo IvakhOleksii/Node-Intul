@@ -49,6 +49,7 @@ export type Job = {
     status?: string;
     title?: string;
     url?: string;
+    hidden?: boolean;
 };
 
 export type User = {
