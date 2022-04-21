@@ -1,7 +1,7 @@
 import { Controller, Param, Body, Get, Post, Put, Delete, QueryParam, UploadedFile, Authorized, HeaderParam, CurrentUser } from 'routing-controllers';
 import { BullhornService } from '../services/BullhornService';
 import { sendVerification } from '../services/EmailService';
-import { register, login, update, saveCandidate } from '../services/User';
+import { register, login, update } from '../services/User';
 import { User } from '../types/User';
 import { CANDIDATE, COMPANY, ROLES } from '../utils/constant';
 import { CreateJwtToken } from '../utils/jwtUtils';
@@ -50,22 +50,6 @@ export class UserController {
       result,
       error
     };
-  }
-
-  @Authorized()
-  @Put('/save')
-  async save(
-    @Body() body: { candidate: string, company: string },
-    @CurrentUser() authUser: User,
-  ) {
-    if(authUser.role === COMPANY) {
-      return await saveCandidate(body.candidate, body.company || authUser.id!);
-    }else{
-      return {
-        result: false,
-        message: 'You are not a company'
-      }
-    }
   }
 
   @Authorized()
