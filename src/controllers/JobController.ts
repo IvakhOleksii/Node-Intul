@@ -28,7 +28,11 @@ import {
   ApplyResponse,
   GetSavedJobsResponse,
   AdvancedFilterOption,
+  DATASET_MAIN,
+  DataSources,
 } from "../types/Common";
+import { ALLOWED_GETRO_FILTERS } from "../types/Getro";
+import { ALLOWED_JOB_KEYS, JobKey } from "../types/Job";
 import { User } from "../types/User";
 import { getDataSource } from "../utils";
 import { JobFilter } from "../utils/FieldMatch";
@@ -96,27 +100,176 @@ export class JobController {
 
   @Post("/search")
   async searchByFilter(
-    @Body() body: FilterBody
+    @Body() body: FilterBody & { datasource?: DataSources }
   ): Promise<JobSearchByFilterResponse> {
     try {
-      const { filters, fields, page, count } = body;
-      const bullhornJobs = (await this.getJobsByFilterFromBullhorn(
-        filters,
-        fields,
-        page,
-        count
-      )) as Job[];
-      const response = {
-        jobs: bullhornJobs,
-        total: bullhornJobs?.length,
-        message: null,
-      };
-      return response;
+      const { filters, fields, page, count, datasource } = body;
+
+      const _datasource = datasource ?? "bullhorn";
+
+      const jobsToGet = [];
+
+      switch (_datasource) {
+        case "bullhorn":
+          jobsToGet.push(
+            this.getJobsByFilterFromBullhorn(filters, fields, page, count)
+          );
+          break;
+        case "getro":
+          jobsToGet.push(
+            this.getJobsByFilterFromGetro(filters, fields || [], count)
+          );
+          break;
+        case "main":
+          jobsToGet.push(
+            this.getJobsByFilterFromMain(filters, fields || [], count)
+          );
+          break;
+        case "all":
+          jobsToGet.push(
+            this.getJobsByFilterFromBullhorn(filters, fields, page, count)
+          );
+          jobsToGet.push(
+            this.getJobsByFilterFromGetro(filters, fields || [], count)
+          );
+          jobsToGet.push(
+            this.getJobsByFilterFromMain(filters, fields || [], count)
+          );
+          break;
+        default:
+          throw "invalid datasource";
+      }
+
+      if (_datasource === "all") {
+        const [bullhornJobs, mainJobs, getroJobs] = await Promise.all(
+          jobsToGet
+        );
+        return {
+          bullhorn: {
+            jobs: bullhornJobs || undefined,
+            total: bullhornJobs?.length,
+          },
+          main: {
+            jobs: mainJobs || undefined,
+            total: mainJobs?.length,
+          },
+          getro: {
+            jobs: getroJobs || undefined,
+            total: getroJobs?.length,
+          },
+        };
+      } else {
+        const [jobs] = await Promise.all(jobsToGet);
+        return {
+          jobs: jobs as Job[],
+          total: jobs?.length,
+          message: null,
+        };
+      }
     } catch (error) {
       return {
         message: error,
       };
     }
+  }
+
+  determineCondition = (
+    key: string,
+    value: string,
+    nonStringFields: Set<string> = new Set()
+  ) => {
+    if (nonStringFields.has(key) || typeof value !== "string") {
+      return `${key} = ${value}`;
+    } else {
+      return `LOWER(${key}) LIKE '%${value.toLowerCase()}%'`;
+    }
+  };
+
+  getFilterConditions = (
+    filters: AdvancedFilterOption[],
+    nonStringFields: Set<string> = new Set()
+  ) => {
+    const conditions = filters.map((opt) => {
+      if (Array.isArray(opt.value)) {
+        const operator = opt.operator || "OR";
+        const baseCondition = (value: string) =>
+          this.determineCondition(opt.key, value, nonStringFields);
+        return opt.value.map(baseCondition).join(` ${operator} `);
+      } else {
+        return `LOWER(${
+          JobFilter.bullhorn[opt.key]
+        }) LIKE '%${opt.value.toLowerCase()}%'`;
+      }
+    });
+    return conditions.join(" AND ");
+  };
+
+  // TODO: Extract all of these query/filter logic into its own service
+  async getJobsByFilterFromMain(
+    filters: AdvancedFilterOption[] = [],
+    fields: string[] | undefined,
+    count: number | undefined
+  ) {
+    const _filters = filters.filter((filter) =>
+      ALLOWED_JOB_KEYS.has(filter.key as JobKey)
+    );
+
+    const filteredFields = fields?.filter((field) =>
+      ALLOWED_JOB_KEYS.has(field as JobKey)
+    );
+
+    const alias = "main_jobs";
+    const companyAlias = "company";
+
+    const _fields = filteredFields?.length
+      ? filteredFields.join(", ")
+      : `${alias}.*, ${companyAlias}.bh_url as company_url, ${companyAlias}.name as company_name, ${companyAlias}.logo as company_logo`;
+
+    const condition = this.getFilterConditions(_filters);
+    const dataset = DATASET_MAIN;
+    const table = Tables.JOBS;
+
+    const _join = `
+      LEFT JOIN \`${DATASET_MAIN}.${Tables.JOINED_COMPANIES}\` as ${companyAlias} 
+      ON REPLACE(${alias}.companyId, "bh-", "bl-")  = ${companyAlias}.bh_id
+      `;
+
+    return await BigQueryService.selectQuery(
+      dataset,
+      table,
+      _fields,
+      count,
+      condition,
+      _join,
+      alias
+    );
+  }
+
+  async getJobsByFilterFromGetro(
+    filters: AdvancedFilterOption[] = [],
+    fields: string[] | undefined,
+    count: number | undefined
+  ) {
+    const _filters = filters.filter((filter) =>
+      ALLOWED_GETRO_FILTERS.has(filter.key as keyof Job)
+    );
+
+    const filteredFields = fields?.filter((field) =>
+      ALLOWED_GETRO_FILTERS.has(field as keyof Job)
+    );
+    const _fields = filteredFields?.length ? filteredFields.join(", ") : "*";
+
+    const condition = this.getFilterConditions(_filters);
+    const dataset = DATASET_GETRO;
+    const table = Tables.JOBS;
+
+    return (await BigQueryService.selectQuery(
+      dataset,
+      table,
+      _fields,
+      count,
+      condition
+    )) as Job[];
   }
 
   async getJobsByFilterFromBullhorn(
@@ -125,39 +278,31 @@ export class JobController {
     page: number,
     count: number
   ) {
-    if (
-      filters
-        ?.map((opt) => Object.keys(JobFilter.bullhorn).indexOf(opt.key) > -1)
-        .every((val) => val === true)
-    ) {
-      const _fields = fields ? fields.join(", ") : "*";
+    if (filters?.every((opt) => JobFilter.bullhorn[opt.key] != null)) {
       const _dataset = DATASET_BULLHORN;
       const _table = Tables.JOBS;
-      const _condition =
-        filters &&
-        filters
-          .map((opt) => {
-            // TODO: Cleanup and move this out to a util function
-            if (Array.isArray(opt.value)) {
-              const operator = opt.operator || "OR";
-              const baseCondition = (value: string) =>
-                `LOWER(${
-                  JobFilter.bullhorn[opt.key]
-                }) LIKE '%${value.toLowerCase()}%'`;
-              return opt.value.map(baseCondition).join(` ${operator} `);
-            } else {
-              return `LOWER(${
-                JobFilter.bullhorn[opt.key]
-              }) LIKE '%${opt.value.toLowerCase()}%'`;
-            }
-          })
-          .join(" AND ");
+      const _condition = this.getFilterConditions(filters);
+
+      const alias = "bh_jobs";
+      const companyAlias = "company";
+
+      const _fields = fields?.length
+        ? fields.join(", ")
+        : `${alias}.*, ${companyAlias}.bh_url as company_url, ${companyAlias}.name as company_name, ${companyAlias}.logo as company_logo`;
+
+      const _join = `
+        LEFT JOIN \`${DATASET_MAIN}.${Tables.JOINED_COMPANIES}\` as ${companyAlias} 
+        ON CONCAT("bl-", ${alias}.clientCorporationID) = ${companyAlias}.bh_id
+        `;
+
       return await BigQueryService.selectQuery(
         _dataset,
         _table,
         _fields,
         count,
-        _condition
+        _condition,
+        _join,
+        alias
       );
     }
     throw "invalid filter options";
