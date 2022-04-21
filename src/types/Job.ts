@@ -24,6 +24,7 @@ export type Job = {
   type?: string;
   isDeleted?: string;
   postedAt?: string;
+  hidden?: boolean;
 };
 
 export type JobKey = keyof Job;
@@ -54,4 +55,7 @@ export const ALLOWED_JOB_KEYS = new Set<JobKey>([
   "type",
   "isDeleted",
   "postedAt",
+  "hidden",
 ]);
+
+export const ALLOWED_JOB_KEYS_TO_UPDATE = new Set<JobKey>(["hidden"]);
