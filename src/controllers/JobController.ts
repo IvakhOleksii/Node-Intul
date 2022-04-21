@@ -114,12 +114,23 @@ export class JobController {
       switch (_datasource) {
         case "bullhorn":
           jobsToGet.push(
-            this.getJobsByFilterFromBullhorn(filters, fields, page, count, operator)
+            this.getJobsByFilterFromBullhorn(
+              filters,
+              fields,
+              page,
+              count,
+              operator
+            )
           );
           break;
         case "getro":
           jobsToGet.push(
-            this.getJobsByFilterFromGetro(filters, fields || [], count, operator)
+            this.getJobsByFilterFromGetro(
+              filters,
+              fields || [],
+              count,
+              operator
+            )
           );
           break;
         case "main":
@@ -129,10 +140,21 @@ export class JobController {
           break;
         case "all":
           jobsToGet.push(
-            this.getJobsByFilterFromBullhorn(filters, fields, page, count, operator)
+            this.getJobsByFilterFromBullhorn(
+              filters,
+              fields,
+              page,
+              count,
+              operator
+            )
           );
           jobsToGet.push(
-            this.getJobsByFilterFromGetro(filters, fields || [], count, operator)
+            this.getJobsByFilterFromGetro(
+              filters,
+              fields || [],
+              count,
+              operator
+            )
           );
           jobsToGet.push(
             this.getJobsByFilterFromMain(filters, fields || [], count, operator)
@@ -192,8 +214,8 @@ export class JobController {
 
   getFilterConditions = (
     filters: AdvancedFilterOption[],
-    specialHandlers: Dictionary<(key: string, value: string) => string> = {},
     operator: Operator = "OR",
+    specialHandlers: Dictionary<(key: string, value: string) => string> = {},
     nonStringFields: Set<string> = new Set()
   ) => {
     const conditions = filters.map((opt) => {
@@ -303,7 +325,11 @@ export class JobController {
         key: JobFilter.bullhorn[filter.key],
         value: filter.value,
       }));
-      const _condition = this.getFilterConditions(_filters, _specialHandlers, operator);
+      const _condition = this.getFilterConditions(
+        _filters,
+        operator,
+        _specialHandlers
+      );
 
       const alias = "bh_jobs";
       const companyAlias = "company";
