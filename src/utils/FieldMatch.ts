@@ -11,6 +11,7 @@ export const JobFilter: any = {
     willRelocate: "willRelocate",
     status: "status",
     hidden: "hidden",
+    companyId: "clientCorporationID",
   },
   main: {
     id: "id",
@@ -24,6 +25,7 @@ export const JobFilter: any = {
     city: "city",
     state: "state",
     isDeleted: "isDeleted",
+    companyId: "companyId",
   },
 };
 

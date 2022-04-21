@@ -12,6 +12,7 @@ import {
   CurrentUser,
   Patch,
 } from "routing-controllers";
+import { Dictionary } from "typed-two-way-map";
 import { BigQueryService } from "../services/BigQueryService";
 import { GetroService } from "../services/GetroService";
 import { createJob, getAppliedJobsByUser, updateJob } from "../services/Job";
@@ -177,9 +178,12 @@ export class JobController {
   determineCondition = (
     key: string,
     value: string,
+    specialHandlers: Dictionary<(key: string, value: string) => string>,
     nonStringFields: Set<string> = new Set()
   ) => {
-    if (nonStringFields.has(key) || typeof value !== "string") {
+    if (specialHandlers[key] != null) {
+      return specialHandlers[key](key, value);
+    } else if (nonStringFields.has(key) || typeof value !== "string") {
       return `${key} = ${value}`;
     } else {
       return `LOWER(${key}) LIKE '%${value.toLowerCase()}%'`;
@@ -188,6 +192,7 @@ export class JobController {
 
   getFilterConditions = (
     filters: AdvancedFilterOption[],
+    specialHandlers: Dictionary<(key: string, value: string) => string> = {},
     operator: Operator = "OR",
     nonStringFields: Set<string> = new Set()
   ) => {
@@ -195,12 +200,15 @@ export class JobController {
       if (Array.isArray(opt.value)) {
         const operator = opt.operator || "OR";
         const baseCondition = (value: string) =>
-          this.determineCondition(opt.key, value, nonStringFields);
+          this.determineCondition(
+            opt.key,
+            value,
+            specialHandlers,
+            nonStringFields
+          );
         return opt.value.map(baseCondition).join(` ${operator} `);
       } else {
-        return `LOWER(${
-          JobFilter.bullhorn[opt.key]
-        }) LIKE '%${opt.value.toLowerCase()}%'`;
+        return this.determineCondition(opt.key, opt.value, specialHandlers);
       }
     });
     return conditions.join(` ${operator} `);
@@ -286,7 +294,16 @@ export class JobController {
     if (filters?.every((opt) => JobFilter.bullhorn[opt.key] != null)) {
       const _dataset = DATASET_BULLHORN;
       const _table = Tables.JOBS;
-      const _condition = this.getFilterConditions(filters, operator);
+
+      const _specialHandlers = {
+        clientCorporationID: (key: string, value: string) =>
+          `${key} = REPLACE("${value}", "bl-", "")`,
+      };
+      const _filters = filters.map((filter) => ({
+        key: JobFilter.bullhorn[filter.key],
+        value: filter.value,
+      }));
+      const _condition = this.getFilterConditions(_filters, _specialHandlers, operator);
 
       const alias = "bh_jobs";
       const companyAlias = "company";
