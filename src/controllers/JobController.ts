@@ -30,6 +30,7 @@ import {
   AdvancedFilterOption,
   DATASET_MAIN,
   DataSources,
+  Operator,
 } from "../types/Common";
 import { ALLOWED_GETRO_FILTERS } from "../types/Getro";
 import { ALLOWED_JOB_KEYS, JobKey } from "../types/Job";
@@ -209,7 +210,8 @@ export class JobController {
   async getJobsByFilterFromMain(
     filters: AdvancedFilterOption[] = [],
     fields: string[] | undefined,
-    count: number | undefined
+    count: number | undefined,
+    operator: Operator = "OR"
   ) {
     const _filters = filters.filter((filter) =>
       ALLOWED_JOB_KEYS.has(filter.key as JobKey)
@@ -226,7 +228,7 @@ export class JobController {
       ? filteredFields.join(", ")
       : `${alias}.*, ${companyAlias}.bh_url as company_url, ${companyAlias}.name as company_name, ${companyAlias}.logo as company_logo`;
 
-    const condition = this.getFilterConditions(_filters);
+    const condition = this.getFilterConditions(_filters, operator);
     const dataset = DATASET_MAIN;
     const table = Tables.JOBS;
 
@@ -249,7 +251,8 @@ export class JobController {
   async getJobsByFilterFromGetro(
     filters: AdvancedFilterOption[] = [],
     fields: string[] | undefined,
-    count: number | undefined
+    count: number | undefined,
+    operator: Operator = "OR"
   ) {
     const _filters = filters.filter((filter) =>
       ALLOWED_GETRO_FILTERS.has(filter.key as keyof Job)
@@ -260,7 +263,7 @@ export class JobController {
     );
     const _fields = filteredFields?.length ? filteredFields.join(", ") : "*";
 
-    const condition = this.getFilterConditions(_filters);
+    const condition = this.getFilterConditions(_filters, operator);
     const dataset = DATASET_GETRO;
     const table = Tables.JOBS;
 
@@ -278,12 +281,12 @@ export class JobController {
     fields: string[] | null,
     page: number,
     count: number,
-    operator: string = "OR"
+    operator: Operator = "OR"
   ) {
     if (filters?.every((opt) => JobFilter.bullhorn[opt.key] != null)) {
       const _dataset = DATASET_BULLHORN;
       const _table = Tables.JOBS;
-      const _condition = this.getFilterConditions(filters);
+      const _condition = this.getFilterConditions(filters, operator);
 
       const alias = "bh_jobs";
       const companyAlias = "company";
