@@ -51,7 +51,13 @@ export class JobController {
   async searchJobByID(@QueryParam("id") id: string): Promise<JobSearchByID> {
     const datasource = getDataSource(id);
     if (datasource === DataSource.BULLHORN) {
-      const job = await this.getJobFromBullhorn(id);
+      const idFilter = {
+        key: "id",
+        value: id,
+      };
+      const job = (
+        await this.getJobsByFilterFromBullhorn([idFilter], null, 0, 1)
+      )?.[0];
       return {
         job,
         source: datasource,

@@ -2,6 +2,7 @@ import { Dictionary, TypedDictionary } from "typed-two-way-map";
 
 export const JobFilter: any = {
   bullhorn: {
+    id: "id",
     title: "title",
     skill: "skillList",
     city: "address_city",
