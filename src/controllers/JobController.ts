@@ -218,18 +218,30 @@ export class JobController {
       ALLOWED_JOB_KEYS.has(field as JobKey)
     );
 
-    const _fields = filteredFields?.length ? filteredFields.join(", ") : "*";
+    const alias = "main_jobs";
+    const companyAlias = "company";
+
+    const _fields = filteredFields?.length
+      ? filteredFields.join(", ")
+      : `${alias}.*, ${companyAlias}.bh_url as company_url, ${companyAlias}.name as company_name, ${companyAlias}.logo as company_logo`;
 
     const condition = this.getFilterConditions(_filters);
     const dataset = DATASET_MAIN;
     const table = Tables.JOBS;
+
+    const _join = `
+      LEFT JOIN \`${DATASET_MAIN}.${Tables.JOINED_COMPANIES}\` as ${companyAlias} 
+      ON REPLACE(${alias}.companyId, "bh-", "bl-")  = ${companyAlias}.bh_id
+      `;
 
     return await BigQueryService.selectQuery(
       dataset,
       table,
       _fields,
       count,
-      condition
+      condition,
+      _join,
+      alias
     );
   }
 
@@ -271,6 +283,7 @@ export class JobController {
       const _dataset = DATASET_BULLHORN;
       const _table = Tables.JOBS;
       const _condition = this.getFilterConditions(filters);
+
       return await BigQueryService.selectQuery(
         _dataset,
         _table,
