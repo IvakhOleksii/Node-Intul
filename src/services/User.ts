@@ -2,7 +2,7 @@ import { User, USERKEYS } from "../types/User";
 import { BigQueryService } from "./BigQueryService";
 import { DATASET_MAIN, Tables } from "../types/Common";
 import { COORDINATOR, ROLES } from "../utils/constant";
-import { genUUID, justifyData } from "../utils";
+import { genUUID, isExistByCondition, justifyData } from "../utils";
 
 const isNullOrEmpty = (value: any) => {
     return !value || (value && !`${value}`.trim())
@@ -192,3 +192,40 @@ export const findUserByEmail = async (email: string) => {
         return null;
     }
 };
+
+export const saveCandidate = async (candidateId: string, companyUserId: string) => {
+    try {
+        const condition = `candidate = '${candidateId}' AND company = '${companyUserId}'`;
+        const dataset = DATASET_MAIN
+        const table = Tables.SAVED_CANDIDATES
+        const id = genUUID();
+        const existing = await isExistByCondition(condition, dataset, table);
+        let query = null
+
+        if (existing) {
+            query = `
+                DELETE FROM \`${dataset}.${table}\`
+                WHERE ${condition}
+            `
+        }else{
+            query = `
+                INSERT INTO \`${dataset}.${table}\` (id, candidate, company)
+                VALUES ("${id}", "${candidateId}", "${companyUserId}")
+            `
+        }
+        console.log(query);
+        const options = {
+            query,
+            location: 'US',
+        }
+        const [job] = await BigQueryService.getClient().createQueryJob(options);
+        await job.getQueryResults();
+        return {
+            result: true,
+            message: existing ? 'unsaved candidate' : 'saved candidate'
+        }
+    } catch (error) {
+        console.log(error);
+        return { result: false, message: error };
+    }
+}
