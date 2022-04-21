@@ -33,9 +33,17 @@ export enum DataSource {
   UNKNOWN = "unknown",
 }
 
+type Operator = "AND" | "OR";
+
 export type FilterOption = {
   key: string;
   value: string;
+};
+
+export type AdvancedFilterOption = {
+  key: string;
+  value: string | string[];
+  operator?: Operator;
 };
 
 export type FilterBody = {
