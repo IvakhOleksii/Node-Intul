@@ -120,7 +120,7 @@ export class JobController {
   }
 
   @Authorized()
-  @Patch("/update")
+  @Patch()
   async update(
     @Body() body: Partial<Job> & { id: string }
   ): Promise<ApplyResponse> {
