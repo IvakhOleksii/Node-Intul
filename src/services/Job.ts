@@ -1,4 +1,4 @@
-import { ApplyResponse, DATASET_MAIN, Tables } from "../types/Common";
+import { ApplyResponse, DATASET_BULLHORN, DATASET_MAIN, Tables } from "../types/Common";
 import { Job, ALLOWED_JOB_KEYS } from "../types/Job";
 import { BigQueryService } from "./BigQueryService";
 
@@ -34,9 +34,10 @@ const sanitizeJob = (job: Job): Job => {
 };
 
 export const getAppliedJobsByUser = async (userId: string) => {
-  const query = `SELECT * FROM \`${DATASET_MAIN}.${Tables.JOBS}\`
-                 INNER JOIN \`${DATASET_MAIN}.${Tables.APPLICATIONS}\`
+  const query = `SELECT * FROM \`${DATASET_MAIN}.${Tables.APPLICATIONS}\` 
+                 INNER JOIN \`${DATASET_MAIN}.${Tables.JOBS}\`
                  ON \`${DATASET_MAIN}.${Tables.JOBS}\`.\`id\` = \`${DATASET_MAIN}.${Tables.APPLICATIONS}\`.\`job\`
+                 OR \`${DATASET_MAIN}.${Tables.JOBS}\`.\`externalId\` = \`${DATASET_MAIN}.${Tables.APPLICATIONS}\`.\`job\`
                  WHERE \`${DATASET_MAIN}.${Tables.APPLICATIONS}\`.\`candidate\` = '${userId}'`;
   ``;
   console.log(query);

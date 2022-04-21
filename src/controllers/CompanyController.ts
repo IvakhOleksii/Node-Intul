@@ -67,21 +67,21 @@ export class CompanyController {
   }
 
   @Authorized()
-  @Put('/save')
+  @Put("/save")
   async save(
     @CurrentUser() authUser: User,
-    @Body() body: { company: string, candidate?: string }
+    @Body() body: { company: string; candidate?: string }
   ): Promise<ApplyResponse> {
-    return await saveCompany(body.company, authUser.id || body.candidate!);
+    return await saveCompany(body.company, body.candidate! || authUser.id!);
   }
 
   @Authorized()
-  @Get('/saved')
+  @Get("/saved")
   async savedCompanies(
     @CurrentUser() authUser: User,
-    @QueryParam('candidate') candidate: string
+    @QueryParam("candidate") candidate: string
   ): Promise<GetSavedCompaniesResponse> {
-    return await getSavedCompanies(authUser.id || candidate);
+    return await getSavedCompanies(candidate || authUser.id!);
   }
 
   async getCompanyByIdFromBullhorn(id: string): Promise<Company | undefined> {
