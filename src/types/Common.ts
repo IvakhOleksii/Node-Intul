@@ -4,6 +4,7 @@ import {
   Company as BullhornCompany,
 } from "../types/Bullhorn";
 import { Job as GetroJob, Company as GetroCompany } from "../types/Getro";
+import { Category } from "./Category";
 import { User } from "./User";
 
 export enum Tables {
@@ -18,6 +19,7 @@ export enum Tables {
   SAVED_COMPANIES = "SavedCompanies",
   JOINED_COMPANIES = "companies_joined",
   JOINED_CANDIDATES = "candidates_joined",
+  CATEGORIES = "Categories",
 }
 
 export const DATASET_BULLHORN = config.bullhornDatasetID || "";
@@ -49,6 +51,11 @@ export type FilterBody = {
   fields: string[] | null;
   page: number;
   count: number;
+};
+
+type CountFilterResponse = {
+  total?: number;
+  message?: any;
 };
 
 // Job Types
@@ -114,5 +121,15 @@ export type CandidateSearchByFilterResponse = {
 
 export type UpdateComapnyProfileResponse = {
   result: boolean;
+  message?: any;
+};
+
+// Category Types
+export type CategorySearchByFilterResponse = {
+  categories?: Category[];
+} & CountFilterResponse;
+
+export type CategoryByIdResponse = {
+  category?: Category;
   message?: any;
 };
