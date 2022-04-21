@@ -103,7 +103,7 @@ export class JobController {
     @Body() body: FilterBody & { datasource?: DataSources }
   ): Promise<JobSearchByFilterResponse> {
     try {
-      const { filters, fields, page, count, datasource } = body;
+      const { filters, fields, page, count, datasource, operator } = body;
 
       const _datasource = datasource ?? "bullhorn";
 
@@ -112,28 +112,28 @@ export class JobController {
       switch (_datasource) {
         case "bullhorn":
           jobsToGet.push(
-            this.getJobsByFilterFromBullhorn(filters, fields, page, count)
+            this.getJobsByFilterFromBullhorn(filters, fields, page, count, operator)
           );
           break;
         case "getro":
           jobsToGet.push(
-            this.getJobsByFilterFromGetro(filters, fields || [], count)
+            this.getJobsByFilterFromGetro(filters, fields || [], count, operator)
           );
           break;
         case "main":
           jobsToGet.push(
-            this.getJobsByFilterFromMain(filters, fields || [], count)
+            this.getJobsByFilterFromMain(filters, fields || [], count, operator)
           );
           break;
         case "all":
           jobsToGet.push(
-            this.getJobsByFilterFromBullhorn(filters, fields, page, count)
+            this.getJobsByFilterFromBullhorn(filters, fields, page, count, operator)
           );
           jobsToGet.push(
-            this.getJobsByFilterFromGetro(filters, fields || [], count)
+            this.getJobsByFilterFromGetro(filters, fields || [], count, operator)
           );
           jobsToGet.push(
-            this.getJobsByFilterFromMain(filters, fields || [], count)
+            this.getJobsByFilterFromMain(filters, fields || [], count, operator)
           );
           break;
         default:
@@ -187,6 +187,7 @@ export class JobController {
 
   getFilterConditions = (
     filters: AdvancedFilterOption[],
+    operator: Operator = "OR",
     nonStringFields: Set<string> = new Set()
   ) => {
     const conditions = filters.map((opt) => {
@@ -201,7 +202,7 @@ export class JobController {
         }) LIKE '%${opt.value.toLowerCase()}%'`;
       }
     });
-    return conditions.join(" AND ");
+    return conditions.join(` ${operator} `);
   };
 
   // TODO: Extract all of these query/filter logic into its own service
@@ -276,7 +277,8 @@ export class JobController {
     filters: AdvancedFilterOption[] | undefined,
     fields: string[] | null,
     page: number,
-    count: number
+    count: number,
+    operator: string = "OR"
   ) {
     if (filters?.every((opt) => JobFilter.bullhorn[opt.key] != null)) {
       const _dataset = DATASET_BULLHORN;
