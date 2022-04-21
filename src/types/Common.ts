@@ -33,6 +33,8 @@ export enum DataSource {
   UNKNOWN = "unknown",
 }
 
+export type DataSources = "bullhorn" | "getro" | "main" | "all";
+
 type Operator = "AND" | "OR";
 
 export type FilterOption = {
@@ -66,10 +68,18 @@ export type JobSearchByID = {
   message?: string;
 };
 
-export type JobSearchByFilterResponse = {
-  jobs?: Job[];
-  total?: number;
-  message?: any;
+export type JobSearchByFilterResponse =
+  | {
+      jobs?: Job[];
+      total?: number;
+      message?: any;
+    }
+  | AllJobsResponse;
+
+export type AllJobsResponse = {
+  bullhorn: JobSearchByFilterResponse;
+  getro: JobSearchByFilterResponse;
+  main: JobSearchByFilterResponse;
 };
 
 export type ApplyResponse = {

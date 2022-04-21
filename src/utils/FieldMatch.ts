@@ -10,6 +10,20 @@ export const JobFilter: any = {
     yearsRequired: "yearsRequired",
     willRelocate: "willRelocate",
     status: "status",
+    hidden: "hidden",
+  },
+  main: {
+    id: "id",
+    status: "status",
+    skillList: "skillList",
+    hidden: "hidden",
+    employmentType: "employmentType",
+    onSite: "onSite",
+    yearsRequired: "yearsRequired",
+    willRelocate: "willRelocate",
+    city: "city",
+    state: "state",
+    isDeleted: "isDeleted",
   },
 };
 
