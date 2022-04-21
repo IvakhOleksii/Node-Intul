@@ -46,6 +46,7 @@ export class JobController {
   ): Promise<CandidateSearchByFilterResponse> {
     try {
       const { filters, fields, page, count, operator } = body;
+      let _operator = operator || 'OR';
       const _filters = filters?.filter(opt => USER_FILTER[opt.key] != null) || [];
       _filters.push({key: 'role', value: 'candidate'});
       if (_filters && _filters?.length > 0) {
@@ -54,7 +55,7 @@ export class JobController {
         const _table = Tables.JOINED_CANDIDATES;
         const _condition = _filters
           .map(opt => `LOWER(${USER_FILTER[opt.key]}) LIKE '%${typeof opt.value == "string" ? opt.value.toLowerCase() : opt.value}%'`)
-          .join(` ${operator} `);
+          .join(` ${_operator} `);
         const result = await BigQueryService.selectQuery(_dataset, _table, _fields, count, _condition);
         return {
           candidates: result || []
