@@ -1,29 +1,37 @@
 // {
-//     "family": "prod-site-backend-task", 
-//     "executionRoleArn": "arn:aws:iam::484913924231:role/ecsTaskExecutionRole", 
-//     "networkMode": "awsvpc", 
+//     "family": "prod-site-backend-task",
+//     "executionRoleArn": "arn:aws:iam::484913924231:role/ecsTaskExecutionRole",
+//     "networkMode": "awsvpc",
 //     "containerDefinitions": [
 //         {
-//             "name": "intulsa-backend-container-prod", 
-//             "image": "site-backend:prod", 
-//             "cpu": 1024, 
-//             "memory": 2048, 
+//             "name": "intulsa-backend-container-prod",
+//             "image": "site-backend:prod",
+//             "cpu": 1024,
+//             "memory": 2048,
 //             "portMappings": [
 //                 {
-//                     "containerPort": 5000, 
-//                     "hostPort": 5000, 
+//                     "containerPort": 5000,
+//                     "hostPort": 5000,
 //                     "protocol": "tcp"
 //                 }
-//             ], 
-//             "essential": true, 
+//             ],
+//             "essential": true,
+//             "logConfiguration": {
+//                 "logDriver": "awslogs",
+//                 "options": {
+//                     "awslogs-group" : "/ecs/prod-site-backend-task",
+//                     "awslogs-region": "us-east-1",
+//                     "awslogs-stream-prefix": "ecs"
+//                 }
+//             },
 //             "environment": [
 //                 {
-//                     "name": "CHOKIDAR_USEPOLLING", 
+//                     "name": "CHOKIDAR_USEPOLLING",
 //                     "value": "true"
 //                 }
 //             ]
 //         }
-//     ], 
-//     "cpu": "1024", 
+//     ],
+//     "cpu": "1024",
 //     "memory": "2048"
 // }
