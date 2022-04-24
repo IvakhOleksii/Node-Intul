@@ -226,7 +226,7 @@ export class JobController {
   ) => {
     const conditions = filters.map((opt) => {
       if (Array.isArray(opt.value)) {
-        const operator = opt.operator || "OR";
+        const operator = opt.operator || "AND";
         const baseCondition = (value: string) =>
           this.determineCondition(
             opt.key,
