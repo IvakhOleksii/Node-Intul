@@ -8,7 +8,7 @@ import { Category } from "./Category";
 import { User } from "./User";
 
 export enum Tables {
-  COMPANIES = "Companies",
+  COMPANIES = "Company",
   JOBS = "Jobs",
   USER = "User",
   CONTACTS = "Contacts",
