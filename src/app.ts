@@ -21,6 +21,7 @@ const multerStorage = multer.diskStorage({
     destination: (req, file, cb) => {
         const folder = req.body.type || "resumes";
         const path =  __dirname + `/../uploads/${folder}`
+        console.log("upload path: ", path);
         fs.mkdirSync(path, { recursive: true })
         cb(null, path);
     },
