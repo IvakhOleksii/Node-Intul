@@ -72,6 +72,6 @@ export const USER_FILTER: any = {
   seniority: "seniority",
   experience: "experience",
   employmentPreference: "employmentPreference",
-  degreeList: "degreeList",
+  educationDegree: "educationDegree",
   certifications: "certifications",
 };
