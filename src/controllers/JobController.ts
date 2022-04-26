@@ -265,10 +265,15 @@ export class JobController {
       : `${alias}.*, ${companyAlias}.bh_url as company_url, ${companyAlias}.name as company_name, ${companyAlias}.logo as company_logo`;
 
     const specialHandlers = {
-      "company_name": (_: string, value: string) => `LOWER(${companyAlias}.name) LIKE '%${value}%'`,
-    }
+      company_name: (_: string, value: string) =>
+        `LOWER(${companyAlias}.name) LIKE '%${value.toLowerCase()}%'`,
+    };
 
-    const condition = this.getFilterConditions(_filters, operator, specialHandlers);
+    const condition = this.getFilterConditions(
+      _filters,
+      operator,
+      specialHandlers
+    );
     const dataset = DATASET_MAIN;
     const table = Tables.JOBS;
 
