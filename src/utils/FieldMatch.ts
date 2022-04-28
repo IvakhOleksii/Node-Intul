@@ -47,6 +47,8 @@ export const CompanyFilter: TypedDictionary<
   },
   joined: {
     name: "name",
+    bh_id: "bh_id",
+    id: "id",
   },
 };
 
