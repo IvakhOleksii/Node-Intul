@@ -161,12 +161,7 @@ export class CompanyController {
     );
     if (_filters && _filters?.length > 0) {
       const _condition = _filters
-        .map(
-          (opt) =>
-            `LOWER(${
-              CompanyFilter.bullhorn[opt.key]
-            }) LIKE '%${opt.value.toLowerCase()}%'`
-        )
+        .map((opt) => `LOWER(${opt.key}) LIKE '%${opt.value.toLowerCase()}%'`)
         .join(` ${operator} `);
       return _condition;
     }
