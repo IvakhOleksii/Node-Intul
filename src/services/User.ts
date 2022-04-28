@@ -119,9 +119,31 @@ export const update = async (parent_id: string, role: string, data: User) => {
       location: "US",
     };
     const [job] = await BigQueryService.getClient().createQueryJob(options);
-    await job.getQueryResults();
+    const res = await job.getQueryResults();
 
-    return { result: true };
+    const updated = await getUserById(id);
+
+    return { result: true, data: updated };
+  } catch (error) {
+    return { result: false, error };
+  }
+};
+
+export const getUserById = async (id: string) => {
+  try {
+    const query = `
+            SELECT *
+            FROM \`${DATASET_MAIN}.${Tables.USER}\`
+            WHERE id = '${id}'
+        `;
+    const options = {
+      query: query,
+      location: "US",
+    };
+    const [job] = await BigQueryService.getClient().createQueryJob(options);
+    const res = await job.getQueryResults();
+
+    return { result: true, data: res[0] };
   } catch (error) {
     return { result: false, error };
   }
@@ -162,7 +184,13 @@ export const login = async (email: string, password: string) => {
     const [job] = await BigQueryService.getClient().createQueryJob(options);
     const [res] = await job.getQueryResults();
     if (res && res.length > 0 && res[0].email === email) {
-      return { result: true, user_id: res[0].id, role: res[0].role, firstname: res[0].firstname, lastname: res[0].lastname };
+      return {
+        result: true,
+        user_id: res[0].id,
+        role: res[0].role,
+        firstname: res[0].firstname,
+        lastname: res[0].lastname,
+      };
     }
     return { result: false, error: "wrong credential" };
   } catch (error) {
