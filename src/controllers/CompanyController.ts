@@ -12,6 +12,7 @@ import {
   CurrentUser,
 } from "routing-controllers";
 import { BigQueryService } from "../services/BigQueryService";
+import { BullhornService } from "../services/BullhornService";
 import { getSavedCompanies, saveCompany } from "../services/Company";
 import { GetroService } from "../services/GetroService";
 import {
@@ -74,6 +75,14 @@ export class CompanyController {
     @Body() body: { company: string; candidate?: string }
   ): Promise<ApplyResponse> {
     return await saveCompany(body.company, body.candidate! || authUser.id!);
+  }
+
+  @Authorized()
+  @Put()
+  async insert(@Body() body: Company): Promise<Company | undefined> {
+    const bullhornService = new BullhornService();
+    await bullhornService.init();
+    return await bullhornService.insertCompany(body);
   }
 
   @Authorized()
