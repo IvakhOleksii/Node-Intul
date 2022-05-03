@@ -76,7 +76,6 @@ export class JobController {
       let _operator = operator || "AND";
       const _filters =
         filters?.filter((opt) => USER_FILTER[opt.key] != null) || [];
-      _filters.push({ key: "role", value: "candidate" });
       const _fields = fields ? fields.join(" ") : "*";
       const _dataset = DATASET_MAIN;
       const _table = Tables.JOINED_CANDIDATES;
