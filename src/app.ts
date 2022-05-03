@@ -12,6 +12,7 @@ import { findUserByEmail } from './services/User';
 import multer from 'multer';
 import { genUUID } from './utils';
 import fs from 'fs'
+import config from './config';
 
 dotenv.config();
 
@@ -121,4 +122,6 @@ app.listen(port, function () {
     console.log(`App is listening on port ${port} !`)
 });
 
-// setupCronJobs();
+if(config.enableCronJobs === "true"){
+    setupCronJobs();
+}
