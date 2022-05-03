@@ -948,6 +948,7 @@ export class BullhornService {
           countryID: 1,
           countryName: "United States",
         },
+        employmentPreference: user.employmentPreference,
       };
       const url = `${this.restUrl}entity/Candidate?${query}`;
       console.log(url);
