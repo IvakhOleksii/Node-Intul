@@ -1,6 +1,6 @@
 import { User, USERKEYS } from "../types/User";
 import { BigQueryService } from "./BigQueryService";
-import { DATASET_MAIN, Tables } from "../types/Common";
+import { DATASET_BULLHORN, DATASET_MAIN, Tables } from "../types/Common";
 import { COORDINATOR, ROLES } from "../utils/constant";
 import { genUUID, isExistByCondition, justifyData } from "../utils";
 
@@ -98,7 +98,7 @@ export const update = async (parent_id: string, role: string, data: User) => {
       };
     }
 
-    const existing = await isExistUser("id", id);
+    const existing: User | null = await isExistUserFull("id", id);
     if (!existing) {
       return {
         result: false,
@@ -109,16 +109,37 @@ export const update = async (parent_id: string, role: string, data: User) => {
     const keys = Object.keys(user);
     const values = keys.map((k) => `${k}="""${user[k]}"""`);
 
+    const options = {
+      location: "US",
+    };
+
+    if (existing.externalId) {
+      try {
+        const bullhornQuery = `
+        UPDATE \`${DATASET_BULLHORN}.${Tables.USER}\`
+        SET ${values.join(", ")}
+        WHERE id = '${id}'
+      `;
+        const [job] = await BigQueryService.getClient().createQueryJob({
+          ...options,
+          query: bullhornQuery,
+        });
+        const res = await job.getQueryResults();
+      } catch (error) {
+        console.error("Could not update user in bullhorn", error);
+      }
+    }
+
     const query = `
             UPDATE \`${DATASET_MAIN}.${Tables.USER}\`
             SET ${values.join(", ")}
             WHERE id = '${id}'
         `;
-    const options = {
-      query: query,
-      location: "US",
-    };
-    const [job] = await BigQueryService.getClient().createQueryJob(options);
+
+    const [job] = await BigQueryService.getClient().createQueryJob({
+      ...options,
+      query,
+    });
     const res = await job.getQueryResults();
 
     const updated = await getUserById(id);
@@ -168,6 +189,28 @@ export const isExistUser = async (field: string, value: string) => {
   } catch (error) {
     console.log(error);
     return true;
+  }
+};
+
+export const isExistUserFull = async (field: string, value: string) => {
+  try {
+    const query = `
+            SELECT * FROM \`${DATASET_MAIN}.${Tables.USER}\`
+            WHERE ${field}='${value}'
+        `;
+    const options = {
+      query: query,
+      location: "US",
+    };
+    const [job] = await BigQueryService.getClient().createQueryJob(options);
+    const [res] = await job.getQueryResults();
+    if (res && res.length > 0 && res[0][field] === value) {
+      return res[0];
+    }
+    return null;
+  } catch (error) {
+    console.log(error);
+    return null;
   }
 };
 
