@@ -116,7 +116,7 @@ export const update = async (parent_id: string, role: string, data: User) => {
     if (existing.externalId) {
       try {
         const bullhornQuery = `
-        UPDATE \`${DATASET_BULLHORN}.${Tables.USER}\`
+        UPDATE \`${DATASET_BULLHORN}.${Tables.CANDIDATES}\`
         SET ${values.join(", ")}
         WHERE id = '${id}'
       `;
