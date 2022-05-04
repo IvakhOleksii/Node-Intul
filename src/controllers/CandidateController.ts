@@ -49,7 +49,7 @@ export class JobController {
       const fields = "*";
       const dataset = DATASET_MAIN;
       const table = Tables.JOINED_CANDIDATES;
-      const condition = `id = '${id}' AND role = 'candidate'`;
+      const condition = `id = '${id}'`;
       const result = (await BigQueryService.selectQuery(
         dataset,
         table,
