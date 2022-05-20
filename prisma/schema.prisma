@@ -1,0 +1,404 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  dateAdded   DateTime?
+  description String?
+  enabled     Boolean   @default(true)
+  externalID  Int?
+  occupation  String?
+  type        String?
+  score       Float?    @map("_score")
+
+}
+
+model Company {
+  id            String  @id @default(uuid())
+  name          String
+  annualRevenue BigInt?
+
+  addressId        String?
+  billingAddressId String?
+  address          Address? @relation("addressCompanies", fields: [addressId], references: [id])
+  billingAddress   Address? @relation("billingAddressCompanies", fields: [billingAddressId], references: [id])
+
+  billingContact   String?
+  billingFrequency String?
+  billingPhone     String?
+
+  branchId String?
+  branch   Branch? @relation("branchCompanies", fields: [branchId], references: [id])
+
+  businessSectorList String[]
+
+  companyDescription String?
+  companyURL         String?
+
+  competitors String[]
+
+  culture String?
+
+  dateAdded        DateTime?
+  dateFounded      DateTime?
+  dateLastModified DateTime?
+
+  departmentId String?
+  department   Department? @relation("departmentUsers", fields: [departmentId], references: [id])
+
+  externalID String?
+
+  facebookProfileName String?
+  fax                 String?
+  feeArrangement      Float?
+  funding             String?
+  industryList        String[]
+
+  invoiceFormat       String?
+  linkedinProfileName String?
+
+  notes        String?
+  numEmployees Int?
+  numOffices   Int?
+
+  ownership String?
+
+  phone    String?
+  revuenue String?
+  status   String?
+
+  taxRate       Float?
+  tickerSymbol  String?
+  trackTitle    String?
+  twitterHandle String?
+  workWeekStart Int?
+
+  score Float? @map("_score")
+
+  // Start custom fields
+  customDate1 DateTime?
+  customDate2 DateTime?
+  customDate3 DateTime?
+
+  customFloat1 Float?
+  customFloat2 Float?
+  customFloat3 Float?
+
+  customInt1 Int?
+  customInt2 Int?
+  customInt3 Int?
+
+  customText1  String?
+  customText2  String?
+  customText3  String?
+  customText4  String?
+  customText5  String?
+  customText6  String?
+  customText7  String?
+  customText8  String?
+  customText9  String?
+  customText10 String?
+  customText11 String?
+  customText12 String?
+  customText13 String?
+  customText14 String?
+  customText15 String?
+  customText16 String?
+  customText17 String?
+  customText18 String?
+  customText19 String?
+  customText20 String?
+
+  customTextBlock1 String?
+  customTextBlock2 String?
+  customTextBlock3 String?
+  customTextBlock4 String?
+  customTextBlock5 String?
+
+  // End custom fields
+}
+
+model Address {
+  id                      String    @id @default(uuid())
+  address1                String
+  address2                String?
+  city                    String
+  state                   String
+  zip                     String
+  timezone                String?
+  countryCode             Int
+  countryName             String
+  countryID               Int
+  addressCompanies        Company[] @relation("addressCompanies")
+  billingAddressCompanies Company[] @relation("billingAddressCompanies")
+}
+
+model Branch {
+  id    String    @id @default(uuid())
+  users Company[] @relation("branchCompanies")
+}
+
+model Department {
+  id    String    @id @default(uuid())
+  name  String
+  users Company[] @relation("departmentUsers")
+}
+
+model Job {
+  id             String    @id @default(uuid())
+  externalId     String?
+  description    String?
+  address1       String?
+  address2       String?
+  city           String?
+  state          String?
+  zip            String?
+  country_id     String?
+  employmentType String?
+  title          String?
+  willRelocate   String?
+  yearsRequired  String?
+  status         String?
+  skillList      String?
+  locations      String?
+  companyId      String?
+  interviews     String?
+  onSite         String?
+  salary         String?
+  salaryUnit     String?
+  startDate      DateTime?
+  type           String?
+  isDeleted      String?
+  postedAt       DateTime?
+  hidden         Boolean   @default(false)
+
+  userSaved User[] @relation("userSavedJobs")
+
+  getroJobInfoId String?
+  getroJobInfo   GetroJobInfo? @relation("getroJobInfo", fields: [getroJobInfoId], references: [id])
+}
+
+model GetroJobInfo {
+  id                    String    @id @default(uuid())
+  applcation_method     String?
+  application_path      String?
+  compensation_currency String?
+  compensation_max      String?
+  compensation_min      String?
+  compensation_period   String?
+  compensation_public   String?
+  description           String?
+  discarded             String?
+  employment_types      String?
+  expires_at            DateTime?
+  job_functions         String?
+  liked                 String?
+  locations             String?
+  organization_domain   String?
+  organization_id       String?
+  organization_logo_url String?
+  organization_name     String?
+  organization_slug     String?
+  passes_filter         String?
+  posted_at             DateTime?
+  slug                  String?
+  source                String?
+  status                String?
+  title                 String?
+  url                   String?
+  hidden                Boolean   @default(false)
+
+  job Job[] @relation("getroJobInfo")
+}
+
+model User {
+  id              String  @id @default(uuid())
+  firstName       String
+  lastName        String
+  email           String
+  password        String
+  role            String?
+  city            String?
+  state           String?
+  resume          String?
+  phone           String?
+  linkedin        String?
+  skills          String?
+  expertise       String?
+  experienceYears String?
+  workspace       String?
+  aboutUs         String?
+  referredBy      String?
+  roles           String?
+  externalId      String?
+  gender          String?
+
+  address1 String?
+  address2 String?
+  zip      String?
+
+  description String?
+  status      String?
+  seniority   String?
+  username    String?
+
+  logo          String?
+  companyName   String?
+  annualRevenue String?
+  companyURL    String?
+  numEmployees  String?
+  revenue       String?
+  dateFounded   DateTime?
+
+  employeeType String?
+  experience   String?
+
+  hourlyRate String?
+
+  willRelocate String?
+
+  ethnicity String?
+
+  workAuthorized String?
+
+  disability String?
+
+  avatar String?
+
+  occupation String?
+
+  employmentPreference String?
+
+  candidateId String?
+  candidate   Candidate? @relation("userCandidate", fields: [candidateId], references: [id])
+
+  savedJobs       Job[]       @relation("userSavedJobs")
+  savedCandidates Candidate[] @relation("userSavedCandidates")
+}
+
+model Candidate {
+  id               String    @id @default(uuid())
+  address          String?
+  certifications   String?
+  comments         String?
+  companyName      String?
+  companyURL       String?
+  customInt6       String?
+  dateAdded        DateTime?
+  dateAvailable    DateTime?
+  dateAvailableEnd DateTime?
+  dateI9Expiration DateTime?
+  dateLastComment  DateTime?
+  dateLastModified DateTime?
+  dateNextCall     DateTime?
+  dateOfBirth      String?
+
+  dayRate            String?
+  dayRateLow         String?
+  degreeList         String?
+  description        String?
+  desiredLocations   String?
+  disability         String?
+  educationDegree    String?
+  email              String?
+  email2             String?
+  email3             String?
+  employeeType       String?
+  employeePreference String?
+  ethnicity          String?
+  experience         String?
+  externalID         String?
+  fax                String?
+  fax2               String?
+  fax3               String?
+
+  firstName String?
+  lastName  String?
+
+  gender        String?
+  hourlyRate    String?
+  hourlyRateLow String?
+  idOnFile      String?
+  isAnonymized  String?
+  isDeleted     String?
+  isEditable    String?
+  isExempt      String?
+
+  leads          String?
+  maritalStatus  String?
+  massMailOptOut String?
+  middleName     String?
+  mobile         String?
+  name           String?
+  namePrefix     String?
+  nameSuffix     String?
+
+  nickName              String?
+  numCategories         String?
+  numOwners             String?
+  occupation            String?
+  otherDeductionsAmount String?
+  otherIncomeAmount     String?
+  pager                 String?
+  paperWorkOnFile       String?
+
+  password               String?
+  payrollClientStartDate DateTime?
+  payrollStatus          String?
+  phone                  String?
+  phone2                 String?
+  phone3                 String?
+
+  preferredContact String?
+  primarySkills    String?
+  recentClientList String?
+  referredBy       String?
+  salary           String?
+  salaryLow        String?
+  secondarySkills  String?
+  skillSet         String?
+  smsOptIn         String?
+  source           String?
+  specialities     String?
+  ssn              String?
+
+  stateAdditionalWithholdingsAmount String?
+  stateExemptions                   String?
+  stateFilingStatus                 String?
+  status                            String?
+  taxID                             String?
+  taxState                          String?
+
+  timeZoneOffsetEST         String?
+  tobaccoUser               String?
+  totalDependentClaimAmount String?
+  travelLimit               String?
+  travelMethod              String?
+  twoJobs                   String?
+  type                      String?
+
+  userDateAdded  DateTime?
+  username       String?
+  veteran        String?
+  willRelocate   String?
+  workAuthorized String?
+
+  address_address1   String?
+  address_address2   String?
+  address_city       String?
+  address_state      String?
+  address_zip        String?
+  address_country_id String?
+
+  employmentPreference String?
+
+  users     User[] @relation("userCandidate")
+  userSaved User[] @relation("userSavedCandidates")
+}
