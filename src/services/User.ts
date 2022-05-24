@@ -5,6 +5,8 @@ import { COORDINATOR, ROLES } from "../utils/constant";
 import { genUUID, isExistByCondition, justifyData } from "../utils";
 import db from "../utils/db";
 
+import { User as dbUser } from "prisma/prisma-client";
+
 const isNullOrEmpty = (value: any) => {
   return !value || (value && !`${value}`.trim());
 };
@@ -57,22 +59,9 @@ export const register = async (data: User) => {
       };
     }
 
-    const keys = Object.keys(user);
-    const values = keys.map((k) => `"""${user[k]}"""`);
-
-    const query = `
-            INSERT INTO \`${DATASET_MAIN}.${Tables.USER}\` (id, ${keys.join(
-      ", "
-    )})
-            VALUES ("${genUUID()}", ${values.join(", ")})
-        `;
-    console.log(query);
-    const options = {
-      query: query,
-      location: "US",
-    };
-    const [job] = await BigQueryService.getClient().createQueryJob(options);
-    await job.getQueryResults();
+    await db.user.create({
+      data: data as unknown as dbUser,
+    });
 
     return { result: true };
   } catch (error) {
@@ -99,7 +88,7 @@ export const update = async (parent_id: string, role: string, data: User) => {
       };
     }
 
-    const existing: User | null = await isExistUserFull("id", id);
+    const existing: dbUser | null = await isExistUserFull("id", id);
     if (!existing) {
       return {
         result: false,
@@ -107,43 +96,20 @@ export const update = async (parent_id: string, role: string, data: User) => {
       };
     }
 
-    const keys = Object.keys(user);
-    const values = keys.map((k) => `${k}="""${user[k]}"""`);
-
-    const options = {
-      location: "US",
-    };
-
     if (existing.externalId) {
       try {
-        const bullhornQuery = `
-        UPDATE \`${DATASET_BULLHORN}.${Tables.CANDIDATES}\`
-        SET ${values.join(", ")}
-        WHERE id = '${id}'
-      `;
-        const [job] = await BigQueryService.getClient().createQueryJob({
-          ...options,
-          query: bullhornQuery,
-        });
-        const res = await job.getQueryResults();
+        // TODO: add bullhorn api update here
       } catch (error) {
         console.error("Could not update user in bullhorn", error);
       }
     }
 
-    const query = `
-            UPDATE \`${DATASET_MAIN}.${Tables.USER}\`
-            SET ${values.join(", ")}
-            WHERE id = '${id}'
-        `;
-
-    const [job] = await BigQueryService.getClient().createQueryJob({
-      ...options,
-      query,
+    const updated = await db.user.update({
+      where: {
+        id: existing.id,
+      },
+      data,
     });
-    const res = await job.getQueryResults();
-
-    const updated = await getUserById(id);
 
     return { result: true, data: updated };
   } catch (error) {
@@ -153,19 +119,13 @@ export const update = async (parent_id: string, role: string, data: User) => {
 
 export const getUserById = async (id: string) => {
   try {
-    const query = `
-            SELECT *
-            FROM \`${DATASET_MAIN}.${Tables.USER}\`
-            WHERE id = '${id}'
-        `;
-    const options = {
-      query: query,
-      location: "US",
-    };
-    const [job] = await BigQueryService.getClient().createQueryJob(options);
-    const res = await job.getQueryResults();
+    const user = await db.user.findFirst({
+      where: {
+        id,
+      },
+    });
 
-    return { result: true, data: res[0] };
+    return { result: true, data: user };
   } catch (error) {
     return { result: false, error };
   }
@@ -173,20 +133,7 @@ export const getUserById = async (id: string) => {
 
 export const isExistUser = async (field: string, value: string) => {
   try {
-    const query = `
-            SELECT * FROM \`${DATASET_MAIN}.${Tables.USER}\`
-            WHERE ${field}='${value}'
-        `;
-    const options = {
-      query: query,
-      location: "US",
-    };
-    const [job] = await BigQueryService.getClient().createQueryJob(options);
-    const [res] = await job.getQueryResults();
-    if (res && res.length > 0 && res[0][field] === value) {
-      return true;
-    }
-    return false;
+    return (await isExistUserFull(field, value)) != null;
   } catch (error) {
     console.log(error);
     return true;
@@ -195,20 +142,13 @@ export const isExistUser = async (field: string, value: string) => {
 
 export const isExistUserFull = async (field: string, value: string) => {
   try {
-    const query = `
-            SELECT * FROM \`${DATASET_MAIN}.${Tables.USER}\`
-            WHERE ${field}='${value}'
-        `;
-    const options = {
-      query: query,
-      location: "US",
-    };
-    const [job] = await BigQueryService.getClient().createQueryJob(options);
-    const [res] = await job.getQueryResults();
-    if (res && res.length > 0 && res[0][field] === value) {
-      return res[0];
-    }
-    return null;
+    const user = await db.user.findFirst({
+      where: {
+        [field]: value,
+      },
+    });
+
+    return user || null;
   } catch (error) {
     console.log(error);
     return null;
@@ -217,12 +157,12 @@ export const isExistUserFull = async (field: string, value: string) => {
 
 export const login = async (email: string, password: string) => {
   try {
-    const existingUser = db.user.findFirst({
+    const existingUser = await db.user.findFirst({
       select: {
         id: true,
         role: true,
-        firstName: true,
-        lastName: true,
+        firstname: true,
+        lastname: true,
       },
       where: {
         email,
@@ -234,6 +174,7 @@ export const login = async (email: string, password: string) => {
       return {
         result: true,
         ...existingUser,
+        user_id: existingUser.id,
       };
     } else {
       return { result: false, error: "wrong credential" };
@@ -246,20 +187,13 @@ export const login = async (email: string, password: string) => {
 
 export const findUserByEmail = async (email: string) => {
   try {
-    const query = `
-            SELECT * FROM \`${DATASET_MAIN}.${Tables.USER}\`
-            WHERE email='${email}'
-        `;
-    const options = {
-      query: query,
-      location: "US",
-    };
-    const [job] = await BigQueryService.getClient().createQueryJob(options);
-    const [res] = await job.getQueryResults();
-    if (res && res.length > 0 && res[0].email === email) {
-      return res[0];
-    }
-    return null;
+    const user = await db.user.findFirst({
+      where: {
+        email,
+      },
+    });
+
+    return user || null;
   } catch (error) {
     console.log(error);
     return null;

@@ -26,7 +26,10 @@ export class UserController {
     @QueryParam("email") email: string,
     @QueryParam("password") password: string
   ) {
-    const { result, error, user_id, role, firstname, lastname } = await login(email, password);
+    const { result, error, user_id, role, firstname, lastname } = await login(
+      email,
+      password
+    );
     if (result) {
       const token = CreateJwtToken(email, user_id, role, firstname, lastname);
       return {
