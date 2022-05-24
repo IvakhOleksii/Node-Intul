@@ -256,8 +256,8 @@ model GetroJobInfo {
 
 model User {
   id              String  @id @default(uuid())
-  firstName       String
-  lastName        String
+  firstname       String
+  lastname        String
   email           String
   password        String
   role            String?
@@ -361,8 +361,8 @@ model Candidate {
   fax2               String?
   fax3               String?
 
-  firstName String?
-  lastName  String?
+  firstname String?
+  lastname  String?
 
   gender        String?
   hourlyRate    String?
