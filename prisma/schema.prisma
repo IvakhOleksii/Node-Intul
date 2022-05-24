@@ -179,6 +179,12 @@ model Department {
   updatedAt DateTime @updatedAt
 }
 
+enum Datasource {
+  main
+  bullhorn
+  getro
+}
+
 model Job {
   id             String    @id @default(uuid())
   externalId     String?
@@ -206,6 +212,7 @@ model Job {
   isDeleted      String?
   postedAt       DateTime?
   hidden         Boolean   @default(false)
+  datasource     Datasource
 
   userSaved User[] @relation("userSavedJobs")
 

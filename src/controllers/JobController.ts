@@ -1,3 +1,4 @@
+import { Datasource, Prisma, PrismaClient } from "@prisma/client";
 import {
   Controller,
   Param,
@@ -37,6 +38,7 @@ import { ALLOWED_GETRO_FILTERS } from "../types/Getro";
 import { ALLOWED_JOB_KEYS, JobKey } from "../types/Job";
 import { User } from "../types/User";
 import { getDataSource } from "../utils";
+import db from "../utils/db";
 import { JobFilter } from "../utils/FieldMatch";
 import {
   getCandidatesOnJob,
@@ -45,157 +47,61 @@ import {
   saveJob,
 } from "../utils/MainCrud";
 
+import { Job as DbJob } from "prisma/prisma-client";
+
 @JsonController("/api/job")
 export class JobController {
   @Get("/search")
-  async searchJobByID(@QueryParam("id") id: string): Promise<JobSearchByID> {
-    const datasource = getDataSource(id);
-    if (datasource === DataSource.BULLHORN) {
-      const idFilter = {
-        key: "id",
-        value: id,
-      };
-      const job = (
-        await this.getJobsByFilterFromBullhorn([idFilter], null, 0, 1)
-      )?.[0];
+  async searchJobByID(@QueryParam("id") id: string) {
+    const job = await db.job.findFirst({
+      where: {
+        id,
+      },
+      include: {
+        getroJobInfo: true,
+      },
+    });
+
+    if (job) {
       return {
-        job,
-        source: datasource,
-      };
-    } else if (datasource === DataSource.GETRO) {
-      const job = await this.getJobFromGetro(id);
-      return {
-        job,
-        source: datasource,
+        ...(job?.getroJobInfo || {}),
+        ...job,
       };
     } else {
-      return {
-        source: DataSource.UNKNOWN,
-        message: "unsupported id",
-      };
+      return null;
     }
-  }
-
-  async getJobFromBullhorn(id: string): Promise<Job | undefined> {
-    const fields = "*";
-    const dataset = DATASET_BULLHORN;
-    const table = Tables.JOBS;
-    const condition = `id = '${id}'`;
-    const result = (await BigQueryService.selectQuery(
-      dataset,
-      table,
-      fields,
-      undefined,
-      condition
-    )) as Job[];
-    return result ? result[0] : undefined;
-  }
-
-  async getJobFromGetro(id: string): Promise<Job | undefined> {
-    const fields = "*";
-    const dataset = DATASET_GETRO;
-    const table = Tables.JOBS;
-    const condition = `id = '${id}'`;
-    const result = (await BigQueryService.selectQuery(
-      dataset,
-      table,
-      fields,
-      undefined,
-      condition
-    )) as Job[];
-    return result ? result[0] : undefined;
   }
 
   @Post("/search")
   async searchByFilter(
     @Body() body: FilterBody & { datasource?: DataSources }
-  ): Promise<JobSearchByFilterResponse> {
+  ) {
     try {
-      const { filters, fields, page, count, datasource, operator } = body;
+      const { filters, fields, page, count, datasource } = body;
 
-      const _datasource = datasource ?? "bullhorn";
+      const datasourceToEnum: Dictionary<Datasource> = {
+        main: Datasource.main,
+        bullhorn: Datasource.bullhorn,
+        getro: Datasource.getro,
+      };
 
-      const jobsToGet = [];
+      const _datasource = datasource ? datasourceToEnum[datasource] : undefined;
 
-      switch (_datasource) {
-        case "bullhorn":
-          jobsToGet.push(
-            this.getJobsByFilterFromBullhorn(
-              filters,
-              fields,
-              page,
-              count,
-              operator
-            )
-          );
-          break;
-        case "getro":
-          jobsToGet.push(
-            this.getJobsByFilterFromGetro(
-              filters,
-              fields || [],
-              count,
-              operator
-            )
-          );
-          break;
-        case "main":
-          jobsToGet.push(
-            this.getJobsByFilterFromMain(filters, fields || [], count, operator)
-          );
-          break;
-        case "all":
-          jobsToGet.push(
-            this.getJobsByFilterFromBullhorn(
-              filters,
-              fields,
-              page,
-              count,
-              operator
-            )
-          );
-          jobsToGet.push(
-            this.getJobsByFilterFromGetro(
-              filters,
-              fields || [],
-              count,
-              operator
-            )
-          );
-          jobsToGet.push(
-            this.getJobsByFilterFromMain(filters, fields || [], count, operator)
-          );
-          break;
-        default:
-          throw "invalid datasource";
-      }
+      const jobs = (await db.job.findMany({
+        where: {
+          datasource: _datasource as any,
+          ...(filters || {}),
+        },
+        take: count,
+        skip: count * page,
+        select: fields,
+      })) as DbJob[]; // TODO: assumes we are changing frontend to pass compatible fields and filters params
 
-      if (_datasource === "all") {
-        const [bullhornJobs, mainJobs, getroJobs] = await Promise.all(
-          jobsToGet
-        );
-        return {
-          bullhorn: {
-            jobs: bullhornJobs || undefined,
-            total: bullhornJobs?.length,
-          },
-          main: {
-            jobs: mainJobs || undefined,
-            total: mainJobs?.length,
-          },
-          getro: {
-            jobs: getroJobs || undefined,
-            total: getroJobs?.length,
-          },
-        };
-      } else {
-        const [jobs] = await Promise.all(jobsToGet);
-        return {
-          jobs: jobs as Job[],
-          total: jobs?.length,
-          message: null,
-        };
-      }
+      return {
+        jobs,
+        total: jobs?.length,
+        message: null,
+      };
     } catch (error) {
       return {
         message: error,
@@ -241,135 +147,6 @@ export class JobController {
     });
     return conditions.join(` ${operator} `);
   };
-
-  // TODO: Extract all of these query/filter logic into its own service
-  async getJobsByFilterFromMain(
-    filters: AdvancedFilterOption[] = [],
-    fields: string[] | undefined,
-    count: number | undefined,
-    operator: Operator = "OR"
-  ) {
-    const _filters = filters.filter((filter) =>
-      ALLOWED_JOB_KEYS.has(filter.key as JobKey)
-    );
-
-    const filteredFields = fields?.filter((field) =>
-      ALLOWED_JOB_KEYS.has(field as JobKey)
-    );
-
-    const alias = "main_jobs";
-    const companyAlias = "company";
-
-    const _fields = filteredFields?.length
-      ? filteredFields.join(", ")
-      : `${alias}.*, ${companyAlias}.bh_url as company_url, ${companyAlias}.name as company_name, ${companyAlias}.logo as company_logo`;
-
-    const specialHandlers = {
-      company_name: (_: string, value: string) =>
-        `LOWER(${companyAlias}.name) LIKE '%${value.toLowerCase()}%'`,
-    };
-
-    const condition = this.getFilterConditions(
-      _filters,
-      operator,
-      specialHandlers
-    );
-    const dataset = DATASET_MAIN;
-    const table = Tables.JOBS;
-
-    const _join = `
-      LEFT JOIN \`${DATASET_MAIN}.${Tables.JOINED_COMPANIES}\` as ${companyAlias} 
-      ON REPLACE(${alias}.companyId, "bh-", "bl-")  = ${companyAlias}.bh_id
-      `;
-
-    return await BigQueryService.selectQuery(
-      dataset,
-      table,
-      _fields,
-      count,
-      condition,
-      _join,
-      alias
-    );
-  }
-
-  async getJobsByFilterFromGetro(
-    filters: AdvancedFilterOption[] = [],
-    fields: string[] | undefined,
-    count: number | undefined,
-    operator: Operator = "OR"
-  ) {
-    const _filters = filters.filter((filter) =>
-      ALLOWED_GETRO_FILTERS.has(filter.key as keyof Job)
-    );
-
-    const filteredFields = fields?.filter((field) =>
-      ALLOWED_GETRO_FILTERS.has(field as keyof Job)
-    );
-    const _fields = filteredFields?.length ? filteredFields.join(", ") : "*";
-
-    const condition = this.getFilterConditions(_filters, operator);
-    const dataset = DATASET_GETRO;
-    const table = Tables.JOBS;
-
-    return (await BigQueryService.selectQuery(
-      dataset,
-      table,
-      _fields,
-      count,
-      condition
-    )) as Job[];
-  }
-
-  async getJobsByFilterFromBullhorn(
-    filters: AdvancedFilterOption[] | undefined,
-    fields: string[] | null,
-    page: number,
-    count: number,
-    operator: Operator = "OR"
-  ) {
-    if (filters?.every((opt) => JobFilter.bullhorn[opt.key] != null)) {
-      const _dataset = DATASET_BULLHORN;
-      const _table = Tables.JOBS;
-
-      const _specialHandlers = {
-        clientCorporationID: (key: string, value: string) =>
-          `${key} = REPLACE("${value}", "bl-", "")`,
-      };
-      const _filters = filters.map((filter) => ({
-        key: JobFilter.bullhorn[filter.key],
-        value: filter.value,
-      }));
-      const _condition = this.getFilterConditions(
-        _filters,
-        operator,
-        _specialHandlers
-      );
-
-      const alias = "bh_jobs";
-      const companyAlias = "company";
-
-      const _fields = fields?.length
-        ? fields.join(", ")
-        : `${alias}.*, ${companyAlias}.bh_url as company_url, ${companyAlias}.name as company_name, ${companyAlias}.logo as company_logo`;
-
-      const _join = `
-        LEFT JOIN \`${DATASET_MAIN}.${Tables.JOINED_COMPANIES}\` as ${companyAlias} 
-        ON CONCAT("bl-", ${alias}.clientCorporationID) = ${companyAlias}.bh_id
-        `;
-
-      return await BigQueryService.selectQuery(
-        _dataset,
-        _table,
-        _fields,
-        count,
-        _condition,
-        _join,
-        alias
-      );
-    }
-    throw "invalid filter options";
-  }
 
   @Authorized()
   @Get("/apply")

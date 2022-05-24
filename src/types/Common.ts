@@ -1,3 +1,4 @@
+import { Dictionary } from "typed-two-way-map";
 import config from "../config";
 import {
   Job as BullhornJob,
@@ -50,8 +51,8 @@ export type AdvancedFilterOption = {
 };
 
 export type FilterBody = {
-  filters?: FilterOption[];
-  fields: string[] | null;
+  filters?: any;
+  fields: any;
   page: number;
   count: number;
   operator?: Operator;
