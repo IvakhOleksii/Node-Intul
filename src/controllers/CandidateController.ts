@@ -1,65 +1,40 @@
 import {
-  Controller,
-  Param,
   Body,
   Get,
   Post,
   Put,
-  Delete,
   QueryParam,
   JsonController,
   Authorized,
   CurrentUser,
 } from "routing-controllers";
-import { BigQueryService } from "../services/BigQueryService";
 import { saveCandidate, getSavedCandidates } from "../services/Candidate";
-import { GetroService } from "../services/GetroService";
-import {
-  FilterBody,
-  Tables,
-  GetSavedJobsResponse,
-  CandidateSearchByFilterResponse,
-  CandidateSearchByIdResponse,
-  DATASET_MAIN,
-  Company,
-  UpdateComapnyProfileResponse,
-} from "../types/Common";
+import { FilterBody } from "../types/Common";
 import { User } from "../types/User";
-import { getDataSource } from "../utils";
 import { COMPANY } from "../utils/constant";
-import { JobFilter, USER_FILTER } from "../utils/FieldMatch";
-import { getSavedJobs, saveApplication, saveJob } from "../utils/MainCrud";
+import db from "../utils/db";
+import { getSavedJobs } from "../utils/MainCrud";
 
 @JsonController("/api/candidate")
 export class JobController {
   @Authorized()
   @Get("/savedJobs")
-  async savedJobs(
-    @QueryParam("candidate") candidate: string
-  ): Promise<GetSavedJobsResponse> {
+  async savedJobs(@QueryParam("candidate") candidate: string) {
     return await getSavedJobs(candidate);
   }
 
   @Authorized()
   @Get("/search")
-  async searchById(
-    @QueryParam("id") id: string
-  ): Promise<CandidateSearchByIdResponse> {
+  async searchById(@QueryParam("id") id: string) {
     try {
-      const fields = "*";
-      const dataset = DATASET_MAIN;
-      const table = Tables.JOINED_CANDIDATES;
-      const condition = `id = '${id}'`;
-      const result = (await BigQueryService.selectQuery(
-        dataset,
-        table,
-        fields,
-        undefined,
-        condition
-      )) as User[];
+      const candidate = await db.candidate.findFirst({
+        where: {
+          id,
+        },
+      });
       return {
-        candidate: result ? result[0] : undefined,
-        message: result && !result[0] ? "No user with given ID" : undefined,
+        candidate: candidate || undefined,
+        message: !candidate ? "No user with given ID" : undefined,
       };
     } catch (error) {
       return { message: error };
@@ -68,34 +43,20 @@ export class JobController {
 
   @Authorized()
   @Post("/search")
-  async searchByFilters(
-    @Body() body: FilterBody
-  ): Promise<CandidateSearchByFilterResponse> {
+  async searchByFilters(@Body() body: FilterBody) {
     try {
-      const { filters, fields, page, count, operator } = body;
-      let _operator = operator || "AND";
-      const _filters =
-        filters?.filter((opt) => USER_FILTER[opt.key] != null) || [];
-      const _fields = fields ? fields.join(" ") : "*";
-      const _dataset = DATASET_MAIN;
-      const _table = Tables.JOINED_CANDIDATES;
-      const _condition = _filters
-        .map(
-          (opt) =>
-            `LOWER(${USER_FILTER[opt.key]}) LIKE '%${
-              typeof opt.value == "string" ? opt.value.toLowerCase() : opt.value
-            }%'`
-        )
-        .join(` ${_operator} `);
-      const result = await BigQueryService.selectQuery(
-        _dataset,
-        _table,
-        _fields,
-        count,
-        _condition
-      );
+      const { filters, fields, page, count } = body;
+
+      // TODO: assuming filters and fields format
+      const candidates = await db.candidate.findMany({
+        where: filters,
+        select: fields,
+        take: count,
+        skip: page * count,
+      });
+
       return {
-        candidates: result || [],
+        candidates: candidates || [],
       };
     } catch (error) {
       console.log(error);
