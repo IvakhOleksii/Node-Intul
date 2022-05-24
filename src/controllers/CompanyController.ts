@@ -1,11 +1,8 @@
 import {
-  Controller,
-  Param,
   Body,
   Get,
   Post,
   Put,
-  Delete,
   QueryParam,
   JsonController,
   Authorized,
@@ -14,15 +11,12 @@ import {
 import { BigQueryService } from "../services/BigQueryService";
 import { BullhornService } from "../services/BullhornService";
 import { getSavedCompanies, saveCompany } from "../services/Company";
-import { GetroService } from "../services/GetroService";
 import {
   DATASET_BULLHORN,
   DATASET_GETRO,
   FilterOption,
   Job,
   FilterBody,
-  JobSearchByFilterResponse,
-  JobSearchByID,
   DataSource,
   Tables,
   Company,
@@ -30,16 +24,11 @@ import {
   CompanySearchByFilterResponse,
   DATASET_MAIN,
   ApplyResponse,
-  GetSavedCompaniesResponse,
   Operator,
 } from "../types/Common";
 import { User } from "../types/User";
 import { getDataSource } from "../utils";
-import {
-  CompanyFilter,
-  CompanyFilterKey,
-  JobFilter,
-} from "../utils/FieldMatch";
+import { CompanyFilter, CompanyFilterKey } from "../utils/FieldMatch";
 
 @JsonController("/api/company")
 export class CompanyController {
@@ -90,7 +79,7 @@ export class CompanyController {
   async savedCompanies(
     @CurrentUser() authUser: User,
     @QueryParam("candidate") candidate: string
-  ): Promise<GetSavedCompaniesResponse> {
+  ) {
     return await getSavedCompanies(candidate || authUser.id!);
   }
 
