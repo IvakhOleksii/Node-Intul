@@ -1,37 +1,50 @@
-import { DATASET_MAIN, Tables } from "../types/Common";
-import { genUUID, isExistByCondition } from "../utils";
-import { BigQueryService } from "./BigQueryService";
+import db from "../utils/db";
 
 export const saveCandidate = async (
   candidateId: string,
   companyUserId: string
 ) => {
   try {
-    const condition = `candidate = '${candidateId}' AND company = '${companyUserId}'`;
-    const dataset = DATASET_MAIN;
-    const table = Tables.SAVED_CANDIDATES;
-    const id = genUUID();
-    const existing = await isExistByCondition(condition, dataset, table);
-    let query = null;
+    const existing = await db.user.findFirst({
+      where: {
+        AND: {
+          id: companyUserId,
+          savedCandidates: {
+            some: {
+              id: candidateId,
+            },
+          },
+        },
+      },
+    });
 
     if (existing) {
-      query = `
-              DELETE FROM \`${dataset}.${table}\`
-              WHERE ${condition}
-          `;
+      await db.user.update({
+        where: {
+          id: companyUserId,
+        },
+        data: {
+          savedCandidates: {
+            connect: {
+              id: candidateId,
+            },
+          },
+        },
+      });
     } else {
-      query = `
-              INSERT INTO \`${dataset}.${table}\` (id, candidate, company)
-              VALUES ("${id}", "${candidateId}", "${companyUserId}")
-          `;
+      await db.user.update({
+        where: {
+          id: companyUserId,
+        },
+        data: {
+          savedCandidates: {
+            disconnect: {
+              id: candidateId,
+            },
+          },
+        },
+      });
     }
-    console.log(query);
-    const options = {
-      query,
-      location: "US",
-    };
-    const [job] = await BigQueryService.getClient().createQueryJob(options);
-    await job.getQueryResults();
     return {
       result: true,
       message: existing ? "unsaved candidate" : "saved candidate",
@@ -44,25 +57,17 @@ export const saveCandidate = async (
 
 export const getSavedCandidates = async (companyUserId: string) => {
   try {
-    const dataset = DATASET_MAIN;
-    const table = Tables.SAVED_CANDIDATES;
-    const query = `
-        SELECT *
-        FROM \`${dataset}.${table}\` as saved_candidate
-        LEFT JOIN \`${dataset}.${Tables.USER}\` as company
-        ON company.id = saved_candidate.company
-        WHERE company.id = '${companyUserId}'
-      `;
-    console.log(query);
-    const options = {
-      query,
-      location: "US",
-    };
-    const [job] = await BigQueryService.getClient().createQueryJob(options);
-    const [res] = await job.getQueryResults();
+    const user = await db.user.findFirst({
+      where: {
+        id: companyUserId,
+      },
+      include: {
+        savedCandidates: true,
+      },
+    });
     return {
       result: true,
-      candidates: res,
+      candidates: user?.savedCandidates,
     };
   } catch (error) {
     console.log(error);
