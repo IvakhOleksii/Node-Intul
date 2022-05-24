@@ -3,6 +3,7 @@ import { BigQueryService } from "./BigQueryService";
 import { DATASET_BULLHORN, DATASET_MAIN, Tables } from "../types/Common";
 import { COORDINATOR, ROLES } from "../utils/constant";
 import { genUUID, isExistByCondition, justifyData } from "../utils";
+import db from "../utils/db";
 
 const isNullOrEmpty = (value: any) => {
   return !value || (value && !`${value}`.trim());
@@ -216,26 +217,27 @@ export const isExistUserFull = async (field: string, value: string) => {
 
 export const login = async (email: string, password: string) => {
   try {
-    const query = `
-            SELECT * FROM \`${DATASET_MAIN}.${Tables.USER}\`
-            WHERE email='${email}' AND password='${password}'
-        `;
-    const options = {
-      query: query,
-      location: "US",
-    };
-    const [job] = await BigQueryService.getClient().createQueryJob(options);
-    const [res] = await job.getQueryResults();
-    if (res && res.length > 0 && res[0].email === email) {
+    const existingUser = db.user.findFirst({
+      select: {
+        id: true,
+        role: true,
+        firstName: true,
+        lastName: true,
+      },
+      where: {
+        email,
+        password,
+      },
+    });
+
+    if (existingUser) {
       return {
         result: true,
-        user_id: res[0].id,
-        role: res[0].role,
-        firstname: res[0].firstname,
-        lastname: res[0].lastname,
+        ...existingUser,
       };
+    } else {
+      return { result: false, error: "wrong credential" };
     }
-    return { result: false, error: "wrong credential" };
   } catch (error) {
     console.log(error);
     return { result: false, error };
