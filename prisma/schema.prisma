@@ -7,6 +7,16 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Application {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation("userApplications", fields: [userId], references: [id])
+
+  jobId String
+  job   Job    @relation("jobApplications", fields: [jobId], references: [id])
+}
+
 model Category {
   id          Int       @id @default(autoincrement())
   name        String    @unique
@@ -184,6 +194,8 @@ model Job {
 
   getroJobInfoId String?
   getroJobInfo   GetroJobInfo? @relation("getroJobInfo", fields: [getroJobInfoId], references: [id])
+
+  applications Application[] @relation("jobApplications")
 }
 
 model GetroJobInfo {
@@ -283,6 +295,8 @@ model User {
   savedJobs       Job[]       @relation("userSavedJobs")
   savedCandidates Candidate[] @relation("userSavedCandidates")
   savedCompanies  Company[]   @relation("userSavedCompanies")
+
+  applications Application[] @relation("userApplications")
 }
 
 model Candidate {
