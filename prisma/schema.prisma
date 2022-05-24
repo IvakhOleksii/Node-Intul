@@ -15,6 +15,9 @@ model Application {
 
   jobId String
   job   Job    @relation("jobApplications", fields: [jobId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Category {
@@ -28,6 +31,8 @@ model Category {
   type        String?
   score       Float?    @map("_score")
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Company {
@@ -134,6 +139,9 @@ model Company {
 
   // End custom fields
   users User[] @relation("userSavedCompanies")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Address {
@@ -149,17 +157,26 @@ model Address {
   countryID               Int
   addressCompanies        Company[] @relation("addressCompanies")
   billingAddressCompanies Company[] @relation("billingAddressCompanies")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Branch {
   id    String    @id @default(uuid())
   users Company[] @relation("branchCompanies")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Department {
   id    String    @id @default(uuid())
   name  String
   users Company[] @relation("departmentUsers")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Job {
@@ -196,6 +213,9 @@ model Job {
   getroJobInfo   GetroJobInfo? @relation("getroJobInfo", fields: [getroJobInfoId], references: [id])
 
   applications Application[] @relation("jobApplications")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model GetroJobInfo {
@@ -229,6 +249,9 @@ model GetroJobInfo {
   hidden                Boolean   @default(false)
 
   job Job[] @relation("getroJobInfo")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model User {
@@ -297,6 +320,9 @@ model User {
   savedCompanies  Company[]   @relation("userSavedCompanies")
 
   applications Application[] @relation("userApplications")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Candidate {
@@ -417,4 +443,7 @@ model Candidate {
 
   users     User[] @relation("userCandidate")
   userSaved User[] @relation("userSavedCandidates")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
