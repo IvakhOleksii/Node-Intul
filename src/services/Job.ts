@@ -1,30 +1,39 @@
-import { Dataset } from "@google-cloud/bigquery";
-import {
-  ApplyResponse,
-  DATASET_BULLHORN,
-  DATASET_GETRO,
-  DATASET_MAIN,
-  Tables,
-} from "../types/Common";
+import { DATASET_BULLHORN, DATASET_GETRO, DATASET_MAIN } from "../types/Common";
 import {
   Job,
   ALLOWED_JOB_KEYS,
   JobKey,
   ALLOWED_JOB_KEYS_TO_UPDATE,
 } from "../types/Job";
-import { BigQueryService } from "./BigQueryService";
+import db from "../utils/db";
 
-export const createJob = async (job: Job): Promise<ApplyResponse> => {
-  const jobError = validateJob(job);
-  if (jobError) {
-    throw new Error(jobError);
+export const createJob = async (job: Job) => {
+  try {
+    const jobError = validateJob(job);
+    if (jobError) {
+      throw new Error(jobError);
+    }
+
+    const sanitizedJob = sanitizeJob(job);
+
+    const newJob = await db.job.create({
+      data: {
+        ...sanitizedJob,
+        datasource: sanitizedJob?.datasource as any,
+      },
+    });
+
+    return {
+      result: true,
+      data: newJob,
+    };
+  } catch (err) {
+    console.error(err);
+    return {
+      result: false,
+      error: err,
+    };
   }
-
-  const sanitizedJob = sanitizeJob(job);
-
-  const dataset = DATASET_MAIN;
-  const table = Tables.JOBS;
-  return await BigQueryService.insertQuery(dataset, table, sanitizedJob);
 };
 
 // TODO: Figure out what we want to make required
@@ -46,20 +55,16 @@ const sanitizeJob = (job: Job): Job => {
 };
 
 export const getAppliedJobsByUser = async (userId: string) => {
-  const query = `SELECT * FROM \`${DATASET_MAIN}.${Tables.APPLICATIONS}\` 
-                 INNER JOIN \`${DATASET_MAIN}.${Tables.JOBS}\`
-                 ON \`${DATASET_MAIN}.${Tables.JOBS}\`.\`id\` = \`${DATASET_MAIN}.${Tables.APPLICATIONS}\`.\`job\`
-                 OR \`${DATASET_MAIN}.${Tables.JOBS}\`.\`externalId\` = \`${DATASET_MAIN}.${Tables.APPLICATIONS}\`.\`job\`
-                 WHERE \`${DATASET_MAIN}.${Tables.APPLICATIONS}\`.\`candidate\` = '${userId}'`;
-  ``;
-  console.log(query);
   try {
-    const [job] = await BigQueryService.getClient().createQueryJob({
-      query,
-      location: "US",
+    const jobs = await db.job.findMany({
+      where: {
+        applications: {
+          some: {
+            userId,
+          },
+        },
+      },
     });
-
-    const [jobs] = await job.getQueryResults();
 
     return {
       jobs,
@@ -92,27 +97,22 @@ export const updateJob = async (job: Partial<Job> & { id: string }) => {
       ALLOWED_JOB_KEYS_TO_UPDATE.has(key as JobKey)
     );
 
-    const setters = sanitizedKeys
-      .map((key) => {
-        const typedKey = key as JobKey;
-        return `\`${typedKey}\` = ${(jobData as any)[typedKey]}`;
-      })
-      .join(", ");
+    const filteredJob: Partial<Job> = {};
 
-    const dataset = inferDatasetById(id);
-
-    const query = `UPDATE \`${dataset}.${Tables.JOBS}\`
-                  SET ${setters}
-                  WHERE \`id\` = '${id}'`;
-
-    console.log(query);
-
-    const [bigJob] = await BigQueryService.getClient().createQueryJob({
-      query,
-      location: "US",
+    sanitizedKeys.forEach((key) => {
+      const typedKey = key as JobKey;
+      filteredJob[typedKey] = job[typedKey] as any;
     });
 
-    const [res] = await bigJob.getQueryResults();
+    const res = await db.job.update({
+      where: {
+        id,
+      },
+      data: {
+        ...filteredJob,
+        datasource: filteredJob?.datasource as any,
+      },
+    });
 
     return {
       result: true,

@@ -1,3 +1,5 @@
+import { Datasource } from "@prisma/client";
+
 export type Job = {
   id?: string;
   externalId?: string;
@@ -26,6 +28,7 @@ export type Job = {
   postedAt?: string;
   hidden?: boolean;
   company_name?: string;
+  datasource?: Datasource;
 };
 
 export type JobKey = keyof Job;
@@ -57,7 +60,8 @@ export const ALLOWED_JOB_KEYS = new Set<JobKey>([
   "isDeleted",
   "postedAt",
   "hidden",
-  "company_name"
+  "company_name",
+  "datasource",
 ]);
 
 export const ALLOWED_JOB_KEYS_TO_UPDATE = new Set<JobKey>(["hidden"]);

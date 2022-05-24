@@ -212,7 +212,7 @@ model Job {
   isDeleted      String?
   postedAt       DateTime?
   hidden         Boolean   @default(false)
-  datasource     Datasource
+  datasource     Datasource @default(main)
 
   userSaved User[] @relation("userSavedJobs")
 
