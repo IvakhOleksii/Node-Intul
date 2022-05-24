@@ -260,7 +260,7 @@ model User {
   lastname        String
   email           String
   password        String
-  role            String?
+  role            String
   city            String?
   state           String?
   resume          String?

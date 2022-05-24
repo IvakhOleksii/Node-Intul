@@ -18,6 +18,7 @@ import { register, login, update, getStats } from "../services/User";
 import { User } from "../types/User";
 import { CANDIDATE, COMPANY, ROLES } from "../utils/constant";
 import { CreateJwtToken } from "../utils/jwtUtils";
+import { User as DbUser } from "prisma/prisma-client";
 
 @Controller()
 export class UserController {
@@ -26,11 +27,11 @@ export class UserController {
     @QueryParam("email") email: string,
     @QueryParam("password") password: string
   ) {
-    const { result, error, user_id, role, firstname, lastname } = await login(
-      email,
-      password
-    );
+    const { result, error, ...data } = await login(email, password);
     if (result) {
+      const { user_id, role, firstname, lastname } = data as DbUser & {
+        user_id: string;
+      };
       const token = CreateJwtToken(email, user_id, role, firstname, lastname);
       return {
         result,
