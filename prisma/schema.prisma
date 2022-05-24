@@ -123,6 +123,7 @@ model Company {
   customTextBlock5 String?
 
   // End custom fields
+  users User[] @relation("userSavedCompanies")
 }
 
 model Address {
@@ -281,6 +282,7 @@ model User {
 
   savedJobs       Job[]       @relation("userSavedJobs")
   savedCandidates Candidate[] @relation("userSavedCandidates")
+  savedCompanies  Company[]   @relation("userSavedCompanies")
 }
 
 model Candidate {
