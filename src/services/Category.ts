@@ -1,39 +1,18 @@
-import {
-  ALLOWED_CATEGORY_FILTER_KEYS,
-  Category,
-  CATEGORY_NON_STRING_FIELDS,
-} from "../types/Category";
-import { DATASET_BULLHORN, FilterOption, Operator, Tables } from "../types/Common";
-import { BigQueryService } from "./BigQueryService";
+import { Operator } from "../types/Common";
+import db from "../utils/db";
 
 export const getCategoriesByFilter = async (
-  filters: FilterOption[] = [],
-  fields?: string[],
+  filters: any,
+  fields?: any,
   count?: number,
   operator: Operator = "OR"
 ) => {
-  const _filters = filters.filter((filter) => {
-    return ALLOWED_CATEGORY_FILTER_KEYS.has(filter.key as any);
+  // TODO: assumes format for fields and filters
+  const categories = await db.category.findMany({
+    where: filters,
+    select: fields,
+    take: count,
   });
 
-  const _fields = fields?.length ? fields.join(", ") : "*";
-
-  const _conditions = _filters
-    .map((filter) => {
-      return typeof filter.value === "string" &&
-        !CATEGORY_NON_STRING_FIELDS.has(filter.key as any)
-        ? `LOWER(${filter.key}) LIKE '%${filter.value.toLowerCase()}%'`
-        : `${filter.key} = ${filter.value}`;
-    })
-    .join(` ${operator} `);
-
-  const _dataset = DATASET_BULLHORN;
-  const _table = Tables.CATEGORIES;
-  return (await BigQueryService.selectQuery(
-    _dataset,
-    _table,
-    _fields,
-    count,
-    _conditions
-  )) as Category[];
+  return categories;
 };
