@@ -191,9 +191,7 @@ export class JobController {
 
   @Authorized()
   @Get("/savedJobs")
-  async savedJobs(
-    @QueryParam("candidate") candidate: string
-  ): Promise<GetSavedJobsResponse> {
+  async savedJobs(@QueryParam("candidate") candidate: string) {
     return await getSavedJobs(candidate);
   }
 
