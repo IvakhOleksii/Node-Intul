@@ -33,17 +33,22 @@ model Category {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  users User[] @relation("userExpertise")
 }
 
 model Company {
   id            String  @id @default(uuid())
   name          String
-  annualRevenue BigInt?
+  annualRevenue Int?
 
   addressId        String?
   billingAddressId String?
   address          Address? @relation("addressCompanies", fields: [addressId], references: [id])
   billingAddress   Address? @relation("billingAddressCompanies", fields: [billingAddressId], references: [id])
+
+  city  String?
+  state String?
 
   billingContact   String?
   billingFrequency String?
@@ -56,6 +61,11 @@ model Company {
 
   companyDescription String?
   companyURL         String?
+
+  // could condsolidate and enrich if needed
+  bh_description    String?
+  getro_description String?
+  description       String?
 
   competitors String[]
 
@@ -88,6 +98,8 @@ model Company {
   phone    String?
   revuenue String?
   status   String?
+
+  logo String?
 
   taxRate       Float?
   tickerSymbol  String?
@@ -140,6 +152,8 @@ model Company {
   // End custom fields
   users User[] @relation("userSavedCompanies")
 
+  jobs Job[] @relation("jobCompany")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -186,7 +200,7 @@ enum Datasource {
 }
 
 model Job {
-  id             String    @id @default(uuid())
+  id             String     @id @default(uuid())
   externalId     String?
   description    String?
   address1       String?
@@ -197,22 +211,24 @@ model Job {
   country_id     String?
   employmentType String?
   title          String?
-  willRelocate   String?
+  willRelocate   Boolean?
   yearsRequired  String?
   status         String?
   skillList      String?
   locations      String?
   companyId      String?
   interviews     String?
-  onSite         String?
+  onSite         Boolean?
   salary         String?
   salaryUnit     String?
   startDate      DateTime?
   type           String?
-  isDeleted      String?
+  isDeleted      Boolean?
   postedAt       DateTime?
-  hidden         Boolean   @default(false)
+  hidden         Boolean    @default(false)
   datasource     Datasource @default(main)
+
+  company Company? @relation("jobCompany", fields: [companyId], references: [id])
 
   userSaved User[] @relation("userSavedJobs")
 
@@ -262,19 +278,22 @@ model GetroJobInfo {
 }
 
 model User {
-  id              String  @id @default(uuid())
-  firstname       String
-  lastname        String
-  email           String
-  password        String
-  role            String
-  city            String?
-  state           String?
-  resume          String?
-  phone           String?
-  linkedin        String?
-  skills          String?
-  expertise       String?
+  id        String  @id @default(uuid())
+  firstname String
+  lastname  String
+  email     String
+  password  String
+  role      String
+  city      String?
+  state     String?
+  resume    String?
+  phone     String?
+  linkedin  String?
+  skills    String?
+
+  expertiseId Int?
+  expertise   Category? @relation("userExpertise", fields: [expertiseId], references: [id])
+
   experienceYears String?
   workspace       String?
   aboutUs         String?
@@ -305,11 +324,11 @@ model User {
 
   hourlyRate String?
 
-  willRelocate String?
+  willRelocate Boolean?
 
   ethnicity String?
 
-  workAuthorized String?
+  workAuthorized Boolean?
 
   disability String?
 
@@ -374,11 +393,11 @@ model Candidate {
   gender        String?
   hourlyRate    String?
   hourlyRateLow String?
-  idOnFile      String?
-  isAnonymized  String?
-  isDeleted     String?
-  isEditable    String?
-  isExempt      String?
+  idOnFile      Boolean?
+  isAnonymized  Boolean?
+  isDeleted     Boolean?
+  isEditable    Boolean?
+  isExempt      Boolean?
 
   leads          String?
   maritalStatus  String?
@@ -396,7 +415,7 @@ model Candidate {
   otherDeductionsAmount String?
   otherIncomeAmount     String?
   pager                 String?
-  paperWorkOnFile       String?
+  paperWorkOnFile       Boolean?
 
   password               String?
   payrollClientStartDate DateTime?
@@ -426,18 +445,18 @@ model Candidate {
   taxState                          String?
 
   timeZoneOffsetEST         String?
-  tobaccoUser               String?
+  tobaccoUser               Boolean?
   totalDependentClaimAmount String?
   travelLimit               String?
   travelMethod              String?
-  twoJobs                   String?
+  twoJobs                   Boolean?
   type                      String?
 
   userDateAdded  DateTime?
   username       String?
-  veteran        String?
-  willRelocate   String?
-  workAuthorized String?
+  veteran        Boolean?
+  willRelocate   Boolean?
+  workAuthorized Boolean?
 
   address_address1   String?
   address_address2   String?
