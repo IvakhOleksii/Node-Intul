@@ -28,6 +28,7 @@ import {
 } from "../types/Common";
 import { User } from "../types/User";
 import { getDataSource } from "../utils";
+import db from "../utils/db";
 import { CompanyFilter, CompanyFilterKey } from "../utils/FieldMatch";
 
 @JsonController("/api/company")
@@ -114,18 +115,14 @@ export class CompanyController {
   }
 
   @Post("/search")
-  async searchByFilter(
-    @Body() body: FilterBody
-  ): Promise<CompanySearchByFilterResponse> {
+  async searchByFilter(@Body() body: FilterBody) {
     try {
       const { filters, fields, page, count, operator } = body;
 
-      let companies: Job[] = await this.getCompaniesFromJoinTable(
-        filters,
-        fields,
-        count,
-        operator
-      );
+      const companies = await db.company.findMany({
+        take: count,
+        skip: (count || 0) * (page || 0),
+      });
 
       const response = {
         companies: companies || [],

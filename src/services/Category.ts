@@ -8,11 +8,11 @@ export const getCategoriesByFilter = async (
   operator: Operator = "OR"
 ) => {
   // TODO: assumes format for fields and filters
+  console.log({ filters, fields });
   const categories = await db.category.findMany({
-    where: filters,
-    select: fields,
+    where: filters?.length ? filters : undefined,
     take: count,
   });
 
-  return categories;
+  return categories as any;
 };

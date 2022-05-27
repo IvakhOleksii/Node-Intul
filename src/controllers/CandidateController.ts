@@ -27,13 +27,36 @@ export class JobController {
   @Get("/search")
   async searchById(@QueryParam("id") id: string) {
     try {
-      const candidate = await db.candidate.findFirst({
+      const user = await db.user.findFirst({
         where: {
           id,
         },
+        include: {
+          candidate: true,
+        },
       });
+
+      let candidate;
+      if (user) {
+        const {
+          password,
+          candidate: userCandidate,
+          ...returnableUserData
+        } = user;
+        candidate = {
+          ...(userCandidate || {}),
+          ...returnableUserData,
+        };
+      } else {
+        candidate = await db.candidate.findFirst({
+          where: {
+            id,
+          },
+        });
+      }
+
       return {
-        candidate: candidate || undefined,
+        candidate,
         message: !candidate ? "No user with given ID" : undefined,
       };
     } catch (error) {

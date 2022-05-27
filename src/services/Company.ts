@@ -2,6 +2,7 @@ import db from "../utils/db";
 
 export const saveCompany = async (company: string, candidate: string) => {
   try {
+    console.log({ company, candidate });
     const existing = await db.user.findFirst({
       where: {
         id: candidate,
@@ -13,7 +14,9 @@ export const saveCompany = async (company: string, candidate: string) => {
       },
     });
 
-    if (!existing) {
+    console.log({ existing });
+
+    if (existing) {
       await db.user.update({
         where: {
           id: candidate,
@@ -27,6 +30,7 @@ export const saveCompany = async (company: string, candidate: string) => {
         },
       });
     } else {
+      console.log("update");
       await db.user.update({
         where: {
           id: candidate,
@@ -61,6 +65,7 @@ export const getSavedCompanies = async (candidateId: string) => {
         savedCompanies: true,
       },
     });
+    console.log({ savedCompanies: candidate?.savedCompanies });
     return {
       companies: candidate?.savedCompanies,
       result: true,

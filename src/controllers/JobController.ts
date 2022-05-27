@@ -53,21 +53,32 @@ import { Job as DbJob } from "prisma/prisma-client";
 export class JobController {
   @Get("/search")
   async searchJobByID(@QueryParam("id") id: string) {
-    const job = await db.job.findFirst({
-      where: {
-        id,
-      },
-      include: {
-        getroJobInfo: true,
-      },
-    });
+    try {
+      const job = await db.job.findFirst({
+        where: {
+          id,
+        },
+        include: {
+          getroJobInfo: true,
+          company: true,
+        },
+      });
 
-    if (job) {
-      return {
-        ...(job?.getroJobInfo || {}),
-        ...job,
-      };
-    } else {
+      console.log({ job });
+
+      if (job) {
+        return {
+          job: {
+            ...(job?.getroJobInfo || {}),
+            ...job,
+            clientCorporation: job.company?.name,
+          },
+        };
+      } else {
+        return null;
+      }
+    } catch (err) {
+      console.error(err);
       return null;
     }
   }
@@ -79,6 +90,10 @@ export class JobController {
     try {
       const { filters, fields, page, count, datasource } = body;
 
+      const whereFilters = normalizeFilters(filters);
+
+      console.log({ filters, whereFilters });
+
       const datasourceToEnum: Dictionary<Datasource> = {
         main: Datasource.main,
         bullhorn: Datasource.bullhorn,
@@ -87,22 +102,34 @@ export class JobController {
 
       const _datasource = datasource ? datasourceToEnum[datasource] : undefined;
 
-      const jobs = (await db.job.findMany({
+      console.log({ count, page });
+      const jobs = await db.job.findMany({
         where: {
           datasource: _datasource as any,
-          ...(filters || {}),
+          ...whereFilters,
         },
         take: count,
-        skip: count * page,
-        select: fields,
-      })) as DbJob[]; // TODO: assumes we are changing frontend to pass compatible fields and filters params
+        skip: (count || 0) * (page || 0),
+        include: {
+          company: true,
+        },
+      }); // TODO: assumes we are changing frontend to pass compatible fields and filters params
+
+      console.log({ jobs });
 
       return {
-        jobs,
+        jobs: jobs.map((job) => {
+          return {
+            ...job,
+            company_name: job.company?.name,
+            company_logo: job.company?.logo,
+          };
+        }),
         total: jobs?.length,
         message: null,
       };
     } catch (error) {
+      console.error(error);
       return {
         message: error,
       };
@@ -201,3 +228,19 @@ export class JobController {
     return await createJob(body);
   }
 }
+
+const normalizeFilters = (filters: any[]) => {
+  const filterObj: any = {};
+  filters.forEach(({ key, value }) => {
+    if (typeof value === "string") {
+      filterObj[key] = {
+        contains: value,
+        mode: "insensitive",
+      };
+    } else {
+      filterObj[key] = value;
+    }
+  });
+
+  return filterObj;
+};

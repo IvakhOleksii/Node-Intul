@@ -2,6 +2,7 @@ import db from "./db";
 
 export const saveApplication = async (job: string, candidate: string) => {
   try {
+    console.log("applying");
     const existing = await db.application.findFirst({
       where: {
         jobId: job,
@@ -9,17 +10,20 @@ export const saveApplication = async (job: string, candidate: string) => {
       },
     });
     if (!existing) {
-      await db.application.create({
+      const app = await db.application.create({
         data: {
           jobId: job,
           userId: candidate,
         },
       });
 
+      console.log({ app });
+
       return {
         result: true,
       };
     } else {
+      console.log("already applied");
       return {
         result: false,
         message: "already applied",
@@ -33,6 +37,7 @@ export const saveApplication = async (job: string, candidate: string) => {
 
 export const saveJob = async (job: string, candidate: string) => {
   try {
+    console.log("saving job");
     const existing = await db.user.findFirst({
       include: {
         savedJobs: true,
@@ -76,6 +81,7 @@ export const saveJob = async (job: string, candidate: string) => {
       });
     }
 
+    console.log("success");
     return {
       result: true,
       messsage: existing ? "unsaved job" : "saved job",
@@ -96,6 +102,8 @@ export const getSavedJobs = async (candidateId: string) => {
         savedJobs: true,
       },
     });
+
+    console.log({ candidate });
 
     return {
       jobs: candidate?.savedJobs,

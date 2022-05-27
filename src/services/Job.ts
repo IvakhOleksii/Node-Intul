@@ -14,7 +14,7 @@ export const createJob = async (job: Job) => {
       throw new Error(jobError);
     }
 
-    const sanitizedJob = sanitizeJob(job);
+    const sanitizedJob = sanitizeJob(job) as any;
 
     const newJob = await db.job.create({
       data: {
@@ -97,7 +97,7 @@ export const updateJob = async (job: Partial<Job> & { id: string }) => {
       ALLOWED_JOB_KEYS_TO_UPDATE.has(key as JobKey)
     );
 
-    const filteredJob: Partial<Job> = {};
+    const filteredJob: any = {};
 
     sanitizedKeys.forEach((key) => {
       const typedKey = key as JobKey;

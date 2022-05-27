@@ -44,6 +44,7 @@ export class UserController {
   @Post("/register")
   async register(@Body() user: User) {
     let data = { ...user };
+    console.log({ user });
     try {
       if (user.role === COMPANY)
         await sendVerification(user.email, user.companyName || "");
@@ -56,12 +57,17 @@ export class UserController {
     }
 
     if (user.role === "candidate") {
-      const res = await (
-        await BullhornService.getClient()
-      ).syncUserTppToBullhorn(user);
-      if (res && res.changedEntityId) {
-        console.log("changedEntityId", res.changedEntityId);
-        data = { ...data, externalId: res.changedEntityId };
+      try {
+        const res = await (
+          await BullhornService.getClient()
+        ).syncUserTppToBullhorn(user);
+        if (res && res.changedEntityId) {
+          console.log("changedEntityId", res.changedEntityId);
+          data = { ...data, externalId: res.changedEntityId };
+        }
+      } catch (error) {
+        console.error("error syncing to BH");
+        console.error(error);
       }
     }
     const { result, error } = await register(data);

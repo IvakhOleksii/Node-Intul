@@ -47,12 +47,17 @@ const validateUser = ({
 
 export const register = async (data: User) => {
   try {
+    console.log("registering...");
     const validate = validateUser(data);
-    if (validate) return { result: false, error: validate };
+    if (validate) {
+      console.log("failed validation", validate);
+      return { result: false, error: validate };
+    }
 
     const user = justifyData(data, USERKEYS);
     const existing = await isExistUser("email", user.email);
     if (existing) {
+      console.log("user exists");
       return {
         result: false,
         error: `User with ${user.email} exists`,
@@ -60,16 +65,25 @@ export const register = async (data: User) => {
     }
 
     await db.user.create({
-      data: data as unknown as dbUser,
+      data: {
+        ...data,
+        expertise: {
+          connect: {
+            id: Number(data.expertise),
+          },
+        },
+      } as any,
     });
 
+    console.log("success");
     return { result: true };
   } catch (error) {
+    console.error(error);
     return { result: false, error };
   }
 };
 
-export const update = async (parent_id: string, role: string, data: User) => {
+export const update = async (parent_id: string, role: string, data: any) => {
   try {
     const user_id = data.id;
     const id = user_id || parent_id;
@@ -177,6 +191,7 @@ export const login = async (email: string, password: string) => {
         user_id: existingUser.id,
       };
     } else {
+      console.log("no existing user");
       return { result: false, error: "wrong credential" };
     }
   } catch (error) {
