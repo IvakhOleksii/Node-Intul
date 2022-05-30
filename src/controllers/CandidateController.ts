@@ -29,6 +29,7 @@ import { getDataSource } from "../utils";
 import { COMPANY } from "../utils/constant";
 import { JobFilter, USER_FILTER } from "../utils/FieldMatch";
 import { getSavedJobs, saveApplication, saveJob } from "../utils/MainCrud";
+import { clearPassword } from '../utils/password';
 
 @JsonController("/api/candidate")
 export class JobController {
@@ -57,8 +58,10 @@ export class JobController {
         undefined,
         condition
       )) as User[];
+      var candidate = result ? result[0] : undefined;
+
       return {
-        candidate: result ? result[0] : undefined,
+        candidate: clearPassword(candidate),
         message: result && !result[0] ? "No user with given ID" : undefined,
       };
     } catch (error) {
@@ -87,13 +90,15 @@ export class JobController {
             }%'`
         )
         .join(` ${_operator} `);
-      const result = await BigQueryService.selectQuery(
+      let result = await BigQueryService.selectQuery(
         _dataset,
         _table,
         _fields,
         count,
         _condition
       );
+      result?.forEach(candidate => clearPassword(candidate));
+
       return {
         candidates: result || [],
       };
