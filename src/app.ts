@@ -97,8 +97,7 @@ app.post("/api/upload", upload.single("file"), (req, res) => {
 });
 
 app.get("/health", (req, res) => {
-  res.statusCode = 200;
-  return;
+  res.status(200).send("Ok");
 });
 
 useExpressServer(app, {
