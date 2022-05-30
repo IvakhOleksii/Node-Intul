@@ -3,6 +3,7 @@ import { BigQueryService } from "./BigQueryService";
 import { DATASET_BULLHORN, DATASET_MAIN, Tables } from "../types/Common";
 import { COORDINATOR, ROLES } from "../utils/constant";
 import { genUUID, isExistByCondition, justifyData } from "../utils";
+import { encryptPassword, checkPassword} from "../utils/password";
 
 const isNullOrEmpty = (value: any) => {
   return !value || (value && !`${value}`.trim());
@@ -55,7 +56,7 @@ export const register = async (data: User) => {
         error: `User with ${user.email} exists`,
       };
     }
-
+    user.password = encryptPassword(user.password);
     const keys = Object.keys(user);
     const values = keys.map((k) => `"""${user[k]}"""`);
 
@@ -104,6 +105,10 @@ export const update = async (parent_id: string, role: string, data: User) => {
         result: false,
         error: `User with id=${id} exists`,
       };
+    }
+
+    if(user.password) {
+      user.password = encryptPassword(user.password);
     }
 
     const keys = Object.keys(user);
@@ -218,7 +223,7 @@ export const login = async (email: string, password: string) => {
   try {
     const query = `
             SELECT * FROM \`${DATASET_MAIN}.${Tables.USER}\`
-            WHERE email='${email}' AND password='${password}'
+            WHERE email='${email}'
         `;
     const options = {
       query: query,
@@ -226,7 +231,7 @@ export const login = async (email: string, password: string) => {
     };
     const [job] = await BigQueryService.getClient().createQueryJob(options);
     const [res] = await job.getQueryResults();
-    if (res && res.length > 0 && res[0].email === email) {
+    if (res && res.length > 0 && res[0].email === email && checkPassword(res[0].password, password)) {
       return {
         result: true,
         user_id: res[0].id,
