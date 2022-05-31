@@ -19,6 +19,7 @@ import { User } from "../types/User";
 import { CANDIDATE, COMPANY, ROLES } from "../utils/constant";
 import { CreateJwtToken } from "../utils/jwtUtils";
 import { User as DbUser } from "prisma/prisma-client";
+import db from "../utils/db";
 
 @Controller()
 export class UserController {
@@ -75,6 +76,27 @@ export class UserController {
       result,
       error,
     };
+  }
+
+  @Authorized()
+  @Get("/user/history")
+  async getHistory(@CurrentUser() authUser: User) {
+    try {
+      const history = await db.history.findMany({
+        where: {
+          table: "User",
+          record_id: authUser.id,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+      return history;
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
   }
 
   @Authorized()

@@ -5,7 +5,7 @@ import { COORDINATOR, ROLES } from "../utils/constant";
 import { genUUID, isExistByCondition, justifyData } from "../utils";
 import db from "../utils/db";
 
-import { User as dbUser } from "prisma/prisma-client";
+import { User as dbUser, History as dbHistory } from "prisma/prisma-client";
 
 const isNullOrEmpty = (value: any) => {
   return !value || (value && !`${value}`.trim());
@@ -122,13 +122,55 @@ export const update = async (parent_id: string, role: string, data: any) => {
       where: {
         id: existing.id,
       },
-      data,
+      data: user,
     });
+
+    try {
+      await addUserHistoryEntries({
+        updatedUser: user,
+        existingUser: existing,
+      });
+    } catch (err) {
+      console.log("could not add user history:", user);
+      console.log(err);
+    }
 
     return { result: true, data: updated };
   } catch (error) {
     return { result: false, error };
   }
+};
+
+export const addUserHistoryEntries = async ({
+  updatedUser,
+  existingUser,
+}: {
+  updatedUser: Partial<dbUser>;
+  existingUser: dbUser;
+}) => {
+  const batch_id = genUUID();
+
+  const historyRecords = Object.keys(updatedUser).map((key) => {
+    const typedKey = key as keyof dbUser;
+    return {
+      table: "User",
+      record_id: existingUser.id,
+      column: key,
+      old_value:
+        existingUser[typedKey] != null
+          ? existingUser[typedKey]?.toString()
+          : null,
+      new_value:
+        updatedUser[typedKey] != null
+          ? updatedUser[typedKey]?.toString()
+          : null,
+      batch_id,
+    };
+  });
+
+  return await db.history.createMany({
+    data: historyRecords,
+  });
 };
 
 export const getUserById = async (id: string) => {
