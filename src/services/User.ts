@@ -150,23 +150,31 @@ export const addUserHistoryEntries = async ({
 }) => {
   const batchId = genUUID();
 
-  const historyRecords = Object.keys(updatedUser).map((key) => {
-    const typedKey = key as keyof dbUser;
-    return {
-      table: USER_TABLE,
-      recordId: existingUser.id,
-      column: key,
-      oldValue:
-        existingUser[typedKey] != null
-          ? existingUser[typedKey]?.toString()
-          : null,
-      newValue:
-        updatedUser[typedKey] != null
-          ? updatedUser[typedKey]?.toString()
-          : null,
-      batchId,
-    };
-  });
+  const historyRecords = Object.keys(updatedUser)
+    .filter((key) => {
+      const typedKey = key as keyof dbUser;
+      const newValue = updatedUser[typedKey];
+      const oldValue = existingUser[typedKey];
+
+      return newValue !== oldValue;
+    })
+    .map((key) => {
+      const typedKey = key as keyof dbUser;
+      return {
+        table: USER_TABLE,
+        recordId: existingUser.id,
+        column: key,
+        oldValue:
+          existingUser[typedKey] != null
+            ? existingUser[typedKey]?.toString()
+            : null,
+        newValue:
+          updatedUser[typedKey] != null
+            ? updatedUser[typedKey]?.toString()
+            : null,
+        batchId,
+      };
+    });
 
   return await db.history.createMany({
     data: historyRecords,
