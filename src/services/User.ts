@@ -1,4 +1,4 @@
-import { User, USERKEYS } from "../types/User";
+import { User, USERKEYS, USER_TABLE } from "../types/User";
 import { BigQueryService } from "./BigQueryService";
 import { DATASET_BULLHORN, DATASET_MAIN, Tables } from "../types/Common";
 import { COORDINATOR, ROLES } from "../utils/constant";
@@ -153,7 +153,7 @@ export const addUserHistoryEntries = async ({
   const historyRecords = Object.keys(updatedUser).map((key) => {
     const typedKey = key as keyof dbUser;
     return {
-      table: "User",
+      table: USER_TABLE,
       recordId: existingUser.id,
       column: key,
       oldValue:

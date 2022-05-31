@@ -15,7 +15,7 @@ import {
 import { BullhornService } from "../services/BullhornService";
 import { sendVerification } from "../services/EmailService";
 import { register, login, update, getStats } from "../services/User";
-import { User } from "../types/User";
+import { User, USER_TABLE } from "../types/User";
 import { CANDIDATE, COMPANY, ROLES } from "../utils/constant";
 import { CreateJwtToken } from "../utils/jwtUtils";
 import { User as DbUser } from "prisma/prisma-client";
@@ -84,7 +84,7 @@ export class UserController {
     try {
       const history = await db.history.findMany({
         where: {
-          table: "User",
+          table: USER_TABLE,
           recordId: authUser.id,
         },
         orderBy: {

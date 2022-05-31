@@ -98,3 +98,5 @@ export type LoginInfo = {
   email: string;
   password: string;
 };
+
+export const USER_TABLE = "User";
