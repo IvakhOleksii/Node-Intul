@@ -148,13 +148,13 @@ export const addUserHistoryEntries = async ({
   updatedUser: Partial<dbUser>;
   existingUser: dbUser;
 }) => {
-  const batch_id = genUUID();
+  const batchId = genUUID();
 
   const historyRecords = Object.keys(updatedUser).map((key) => {
     const typedKey = key as keyof dbUser;
     return {
       table: "User",
-      record_id: existingUser.id,
+      recordId: existingUser.id,
       column: key,
       oldValue:
         existingUser[typedKey] != null
@@ -164,7 +164,7 @@ export const addUserHistoryEntries = async ({
         updatedUser[typedKey] != null
           ? updatedUser[typedKey]?.toString()
           : null,
-      batch_id,
+      batchId,
     };
   });
 

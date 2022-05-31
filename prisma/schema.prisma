@@ -38,20 +38,20 @@ model Category {
 }
 
 model History {
-  id            String  @id @default(uuid())
-  table         String
-  record_id     String
-  column        String
-  oldValue     String?
-  newValue     String?
+  id       String  @id @default(uuid())
+  table    String
+  recordId String
+  column   String
+  oldValue String?
+  newValue String?
 
-  batch_id     String?
+  batchId String?
 
   createdAt DateTime @default(now())
 }
 
 model Company {
-  id            String  @id @default(uuid())
+  id            String @id @default(uuid())
   name          String
   annualRevenue Int?
 

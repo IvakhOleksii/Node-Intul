@@ -85,7 +85,7 @@ export class UserController {
       const history = await db.history.findMany({
         where: {
           table: "User",
-          record_id: authUser.id,
+          recordId: authUser.id,
         },
         orderBy: {
           createdAt: "desc",
