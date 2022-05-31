@@ -42,8 +42,8 @@ model History {
   table         String
   record_id     String
   column        String
-  old_value     String?
-  new_value     String?
+  oldValue     String?
+  newValue     String?
 
   batch_id     String?
 
