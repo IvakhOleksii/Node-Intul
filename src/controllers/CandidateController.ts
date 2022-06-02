@@ -58,7 +58,7 @@ export class JobController {
         undefined,
         condition
       )) as User[];
-      var candidate = result ? result[0] : undefined;
+      const candidate = result?.[0];
 
       return {
         candidate: clearPassword(candidate),
@@ -90,7 +90,7 @@ export class JobController {
             }%'`
         )
         .join(` ${_operator} `);
-      let result = await BigQueryService.selectQuery(
+      const result = await BigQueryService.selectQuery(
         _dataset,
         _table,
         _fields,
