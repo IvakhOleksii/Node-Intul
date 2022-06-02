@@ -21,11 +21,11 @@ import { CreateJwtToken } from "../utils/jwtUtils";
 
 @Controller()
 export class UserController {
-  @Get("/login")
+  @Post("/login")
   async login(
-    @QueryParam("email") email: string,
-    @QueryParam("password") password: string
+    @Body() body: { email: string; password: string }
   ) {
+    const { email, password } = body;
     const { result, error, user_id, role, firstname, lastname } = await login(email, password);
     if (result) {
       const token = CreateJwtToken(email, user_id, role, firstname, lastname);
