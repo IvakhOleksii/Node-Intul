@@ -16,7 +16,7 @@ import { BullhornService } from "../services/BullhornService";
 import { sendVerification } from "../services/EmailService";
 import { register, login, update, getStats } from "../services/User";
 import { User } from "../types/User";
-import { CANDIDATE, COMPANY, ROLES } from "../utils/constant";
+import { COORDINATOR, CANDIDATE, COMPANY, ROLES } from "../utils/constant";
 import { CreateJwtToken } from "../utils/jwtUtils";
 
 @Controller()
@@ -40,6 +40,14 @@ export class UserController {
   @Post("/register")
   async register(@Body() user: User) {
     let data = { ...user };
+
+    if (user.role === COORDINATOR) {
+      return {
+        result: false,
+        error: "Only coordinators can make registration requests for other coordinators",
+      };
+    }
+
     try {
       if (user.role === COMPANY)
         await sendVerification(user.email, user.companyName || "");
@@ -51,7 +59,7 @@ export class UserController {
       };
     }
 
-    if (user.role === "candidate") {
+    if (user.role === CANDIDATE) {
       const res = await (
         await BullhornService.getClient()
       ).syncUserTppToBullhorn(user);
@@ -59,6 +67,24 @@ export class UserController {
         console.log("changedEntityId", res.changedEntityId);
         data = { ...data, externalId: res.changedEntityId };
       }
+    }
+    const { result, error } = await register(data);
+    return {
+      result,
+      error,
+    };
+  }
+
+  @Authorized()
+  @Post("/register_coordinator")
+  async register_coordinator(@Body() user: User, @CurrentUser() authUser: User) {
+    let data = { ...user };
+
+    if (authUser.role !== COORDINATOR) {
+      return {
+        result: false,
+        error: "Only coordinators can make registration requests for other coordinators",
+      };
     }
     const { result, error } = await register(data);
     return {
