@@ -14,10 +14,10 @@ import {
 } from "routing-controllers";
 import { BullhornService } from "../services/BullhornService";
 import { sendVerification } from "../services/EmailService";
-import { register, login, update, getStats } from "../services/User";
+import { register, login, update, recovery, getStats, findUserByEmail } from "../services/User";
 import { User } from "../types/User";
 import { COORDINATOR, CANDIDATE, COMPANY, ROLES } from "../utils/constant";
-import { CreateJwtToken } from "../utils/jwtUtils";
+import { CreateJwtToken, VerifyJwtToken } from "../utils/jwtUtils";
 
 @Controller()
 export class UserController {
@@ -73,6 +73,27 @@ export class UserController {
       result,
       error,
     };
+  }
+
+  @Post("/reset-password")
+  async setPassword(@Body() body: {token: string, new_password: string} ) {
+    const { token, new_password } = body;
+    const data = VerifyJwtToken(token);
+    if(!data)
+      return { result: false, error: 'token is invalid' };
+    const user = await findUserByEmail(data.email);
+    if (!user)
+      return { result: false, error: 'User does not exist'};
+    
+    user.password = new_password;
+
+    return await update(user.id, user.role, user);
+  }
+
+   @Post("/account-recovery")
+  async accountRecovery(@Body() body: {email: string, name: string} ) {
+    const { email, name } = body;
+    return await recovery(email, name);
   }
 
   @Authorized()
