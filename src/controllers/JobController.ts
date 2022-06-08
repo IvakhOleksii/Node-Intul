@@ -371,7 +371,6 @@ export class JobController {
     throw "invalid filter options";
   }
 
-  @Authorized()
   @Get("/apply")
   async apply(
     @QueryParam("candidate") candidate: string,
