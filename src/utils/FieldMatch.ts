@@ -61,7 +61,7 @@ export const USER_FILTER: any = {
   state: "state",
   skills: "skills",
   skillSet: "skillSet",
-  expertise: "expertise",
+  category: "category",
   status: "status",
   email: "email",
   bh_email: "bh_email",
