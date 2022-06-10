@@ -3,9 +3,11 @@ import { BigQueryService } from "./BigQueryService";
 import { DATASET_BULLHORN, DATASET_MAIN, Tables } from "../types/Common";
 import { COORDINATOR, ROLES } from "../utils/constant";
 import { genUUID, isExistByCondition, justifyData } from "../utils";
+
 import db from "../utils/db";
 
 import { User as dbUser, History as dbHistory } from "prisma/prisma-client";
+import { encryptPassword, checkPassword} from "../utils/password";
 
 const isNullOrEmpty = (value: any) => {
   return !value || (value && !`${value}`.trim());
@@ -72,6 +74,7 @@ export const register = async (data: User) => {
             id: Number(data.expertise),
           },
         },
+        password: encryptPassword(user.password)
       } as any,
     });
 
@@ -108,6 +111,10 @@ export const update = async (parent_id: string, role: string, data: any) => {
         result: false,
         error: `User with id=${id} exists`,
       };
+    }
+
+    if(user.password) {
+      user.password = encryptPassword(user.password);
     }
 
     if (existing.externalId) {
@@ -234,7 +241,7 @@ export const login = async (email: string, password: string) => {
       },
     });
 
-    if (existingUser) {
+    if (existingUser && checkPassword(existingUser.password, password)) {
       return {
         result: true,
         ...existingUser,

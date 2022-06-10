@@ -12,8 +12,12 @@ import { saveCandidate, getSavedCandidates } from "../services/Candidate";
 import { FilterBody } from "../types/Common";
 import { User } from "../types/User";
 import { COMPANY } from "../utils/constant";
+
 import db from "../utils/db";
-import { getSavedJobs } from "../utils/MainCrud";
+
+import { JobFilter, USER_FILTER } from "../utils/FieldMatch";
+import { getSavedJobs, saveApplication, saveJob } from "../utils/MainCrud";
+import { clearPassword } from '../utils/password';
 
 @JsonController("/api/candidate")
 export class JobController {
@@ -56,7 +60,7 @@ export class JobController {
       }
 
       return {
-        candidate,
+        candidate: clearPassword(candidate),
         message: !candidate ? "No user with given ID" : undefined,
       };
     } catch (error) {
@@ -77,6 +81,8 @@ export class JobController {
         take: count,
         skip: page * count,
       });
+
+      candidates?.forEach(candidate => clearPassword(candidate));
 
       return {
         candidates: candidates || [],

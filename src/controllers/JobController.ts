@@ -175,7 +175,137 @@ export class JobController {
     return conditions.join(` ${operator} `);
   };
 
+
   @Authorized()
+  // TODO: Extract all of these query/filter logic into its own service
+  async getJobsByFilterFromMain(
+    filters: AdvancedFilterOption[] = [],
+    fields: string[] | undefined,
+    count: number | undefined,
+    operator: Operator = "OR"
+  ) {
+    const _filters = filters.filter((filter) =>
+      ALLOWED_JOB_KEYS.has(filter.key as JobKey)
+    );
+
+    const filteredFields = fields?.filter((field) =>
+      ALLOWED_JOB_KEYS.has(field as JobKey)
+    );
+
+    const alias = "main_jobs";
+    const companyAlias = "company";
+
+    const _fields = filteredFields?.length
+      ? filteredFields.join(", ")
+      : `${alias}.*, ${companyAlias}.bh_url as company_url, ${companyAlias}.name as company_name, ${companyAlias}.logo as company_logo`;
+
+    const specialHandlers = {
+      company_name: (_: string, value: string) =>
+        `LOWER(${companyAlias}.name) LIKE '%${value.toLowerCase()}%'`,
+    };
+
+    const condition = this.getFilterConditions(
+      _filters,
+      operator,
+      specialHandlers
+    );
+    const dataset = DATASET_MAIN;
+    const table = Tables.JOBS;
+
+    const _join = `
+      LEFT JOIN \`${DATASET_MAIN}.${Tables.JOINED_COMPANIES}\` as ${companyAlias} 
+      ON REPLACE(${alias}.companyId, "bh-", "bl-")  = ${companyAlias}.bh_id
+      `;
+
+    return await BigQueryService.selectQuery(
+      dataset,
+      table,
+      _fields,
+      count,
+      condition,
+      _join,
+      alias
+    );
+  }
+
+  async getJobsByFilterFromGetro(
+    filters: AdvancedFilterOption[] = [],
+    fields: string[] | undefined,
+    count: number | undefined,
+    operator: Operator = "OR"
+  ) {
+    const _filters = filters.filter((filter) =>
+      ALLOWED_GETRO_FILTERS.has(filter.key as keyof Job)
+    );
+
+    const filteredFields = fields?.filter((field) =>
+      ALLOWED_GETRO_FILTERS.has(field as keyof Job)
+    );
+    const _fields = filteredFields?.length ? filteredFields.join(", ") : "*";
+
+    const condition = this.getFilterConditions(_filters, operator);
+    const dataset = DATASET_GETRO;
+    const table = Tables.JOBS;
+
+    return (await BigQueryService.selectQuery(
+      dataset,
+      table,
+      _fields,
+      count,
+      condition
+    )) as Job[];
+  }
+
+  async getJobsByFilterFromBullhorn(
+    filters: AdvancedFilterOption[] | undefined,
+    fields: string[] | null,
+    page: number,
+    count: number,
+    operator: Operator = "OR"
+  ) {
+    if (filters?.every((opt) => JobFilter.bullhorn[opt.key] != null)) {
+      const _dataset = DATASET_BULLHORN;
+      const _table = Tables.JOBS;
+
+      const _specialHandlers = {
+        clientCorporationID: (key: string, value: string) =>
+          `${key} = REPLACE("${value}", "bl-", "")`,
+      };
+      const _filters = filters.map((filter) => ({
+        key: JobFilter.bullhorn[filter.key],
+        value: filter.value,
+      }));
+      const _condition = this.getFilterConditions(
+        _filters,
+        operator,
+        _specialHandlers
+      );
+
+      const alias = "bh_jobs";
+      const companyAlias = "company";
+
+      const _fields = fields?.length
+        ? fields.join(", ")
+        : `${alias}.*, ${companyAlias}.bh_url as company_url, ${companyAlias}.name as company_name, ${companyAlias}.logo as company_logo`;
+
+      const _join = `
+        LEFT JOIN \`${DATASET_MAIN}.${Tables.JOINED_COMPANIES}\` as ${companyAlias} 
+        ON CONCAT("bl-", ${alias}.clientCorporationID) = ${companyAlias}.bh_id
+        `;
+
+      return await BigQueryService.selectQuery(
+        _dataset,
+        _table,
+        _fields,
+        count,
+        _condition,
+        _join,
+        alias
+      );
+    }
+    throw "invalid filter options";
+  }
+
   @Get("/apply")
   async apply(
     @QueryParam("candidate") candidate: string,

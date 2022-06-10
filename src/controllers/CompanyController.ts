@@ -29,7 +29,13 @@ import {
 import { User } from "../types/User";
 import { getDataSource } from "../utils";
 import db from "../utils/db";
-import { CompanyFilter, CompanyFilterKey } from "../utils/FieldMatch";
+
+import {
+  CompanyFilter,
+  CompanyFilterKey,
+  JobFilter,
+} from "../utils/FieldMatch";
+import { COORDINATOR } from "../utils/constant";
 
 @JsonController("/api/company")
 export class CompanyController {
@@ -69,7 +75,17 @@ export class CompanyController {
 
   @Authorized()
   @Put()
-  async insert(@Body() body: Company): Promise<Company | undefined> {
+  async insert(
+    @Body() body: Company,
+    @CurrentUser() authUser: User
+  ): Promise<any> {
+    if (authUser.role !== COORDINATOR) {
+      return {
+        result: false,
+        error: "You should be a coordinator for creating a company",
+      };
+    }
+
     const bullhornService = new BullhornService();
     await bullhornService.init();
     return await bullhornService.insertCompany(body);

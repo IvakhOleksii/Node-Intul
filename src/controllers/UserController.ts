@@ -15,20 +15,25 @@ import {
 import { BullhornService } from "../services/BullhornService";
 import { sendVerification } from "../services/EmailService";
 import { register, login, update, getStats } from "../services/User";
+
 import { User, USER_TABLE } from "../types/User";
-import { CANDIDATE, COMPANY, ROLES } from "../utils/constant";
+
+import { User } from "../types/User";
+import { COORDINATOR, CANDIDATE, COMPANY, ROLES } from "../utils/constant";
+
 import { CreateJwtToken } from "../utils/jwtUtils";
 import { User as DbUser } from "prisma/prisma-client";
 import db from "../utils/db";
 
 @Controller()
 export class UserController {
-  @Get("/login")
+  @Post("/login")
   async login(
-    @QueryParam("email") email: string,
-    @QueryParam("password") password: string
+    @Body() body: { email: string; password: string }
   ) {
+    const { email, password } = body;
     const { result, error, ...data } = await login(email, password);
+
     if (result) {
       const { user_id, role, firstname, lastname } = data as DbUser & {
         user_id: string;
@@ -45,7 +50,13 @@ export class UserController {
   @Post("/register")
   async register(@Body() user: User) {
     let data = { ...user };
-    console.log({ user });
+
+    if (user.role === COORDINATOR) {
+      return {
+        result: false,
+        error: "Only coordinators can make registration requests for other coordinators",
+      };
+    }
     try {
       if (user.role === COMPANY)
         await sendVerification(user.email, user.companyName || "");
@@ -57,7 +68,7 @@ export class UserController {
       };
     }
 
-    if (user.role === "candidate") {
+    if (user.role === CANDIDATE) {
       try {
         const res = await (
           await BullhornService.getClient()
@@ -70,7 +81,6 @@ export class UserController {
         console.error("error syncing to BH");
         console.error(error);
       }
-    }
     const { result, error } = await register(data);
     return {
       result,
@@ -97,6 +107,22 @@ export class UserController {
       console.error(err);
       return null;
     }
+
+  @Post("/register_coordinator")
+  async register_coordinator(@Body() user: User, @CurrentUser() authUser: User) {
+    let data = { ...user };
+
+    if (authUser.role !== COORDINATOR) {
+      return {
+        result: false,
+        error: "Only coordinators can make registration requests for other coordinators",
+      };
+    }
+    const { result, error } = await register(data);
+    return {
+      result,
+      error,
+    };
   }
 
   @Authorized()
