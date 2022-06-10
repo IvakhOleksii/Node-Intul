@@ -41,6 +41,8 @@ import {
   JobFilter,
 } from "../utils/FieldMatch";
 import { COORDINATOR } from "../utils/constant";
+import { sendCandidatesToEmployers } from "../services/EmailService";
+import { getCandidatesList } from "../services/Candidate";
 
 @JsonController("/api/company")
 export class CompanyController {
@@ -76,6 +78,33 @@ export class CompanyController {
     @Body() body: { company: string; candidate?: string }
   ): Promise<ApplyResponse> {
     return await saveCompany(body.company, body.candidate! || authUser.id!);
+  }
+
+  @Authorized()
+  @Put("/send_candidates_to_employers")
+  async send_candidates_to_employers(
+    @CurrentUser() authUser: User,
+    @Body() body: { candidates_ids: string[], employers_emails: string[] }
+  ): Promise<any> {
+   if (authUser.role !== COORDINATOR) {
+      return {
+        result: false,
+        error: "You should be a coordinator for sending candidates to employers",
+      };
+    }
+    try {
+        return {
+          result: await sendCandidatesToEmployers(
+            await getCandidatesList(body.candidates_ids), 
+            body.employers_emails
+          )
+        }
+    } catch (error) {
+      return {
+        result: false,
+        error: "Please check email, email maybe invalid one",
+      };
+    }
   }
 
   @Authorized()
