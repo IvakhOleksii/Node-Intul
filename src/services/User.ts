@@ -3,7 +3,9 @@ import { BigQueryService } from "./BigQueryService";
 import { DATASET_BULLHORN, DATASET_MAIN, Tables } from "../types/Common";
 import { COORDINATOR, ROLES } from "../utils/constant";
 import { genUUID, isExistByCondition, justifyData } from "../utils";
-import { encryptPassword, checkPassword} from "../utils/password";
+import { encryptPassword, checkPassword, clearPassword} from "../utils/password";
+import {sendResetPassword} from "./EmailService"
+import {CreateJwtToken} from "../utils/jwtUtils"
 
 const isNullOrEmpty = (value: any) => {
   return !value || (value && !`${value}`.trim());
@@ -148,6 +150,7 @@ export const update = async (parent_id: string, role: string, data: User) => {
     const res = await job.getQueryResults();
 
     const updated = await getUserById(id);
+    clearPassword(updated.data?.[0]);
 
     return { result: true, data: updated };
   } catch (error) {
@@ -322,3 +325,23 @@ export const getStats = async (userId: string) => {
     };
   }
 };
+
+export const recovery = async (email: string, name: string) => {
+  try {
+    if (isNullOrEmpty(name))
+      return { result: false, error: 'name is required'};
+
+    const user = await findUserByEmail(email);
+    if(!user)
+      return { result: false, error: 'User does not exist'};
+
+    const token = CreateJwtToken(user.email, '', '', '', '');
+
+    await sendResetPassword(email, name, token);
+
+    return { result: true };
+  } catch (error) {
+    console.log(error)
+    return { result: false, error };
+  }
+}
