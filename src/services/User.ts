@@ -7,7 +7,11 @@ import { genUUID, isExistByCondition, justifyData } from "../utils";
 import db from "../utils/db";
 
 import { User as dbUser, History as dbHistory } from "prisma/prisma-client";
-import { encryptPassword, checkPassword} from "../utils/password";
+import {
+  encryptPassword,
+  checkPassword,
+  clearPassword,
+} from "../utils/password";
 
 const isNullOrEmpty = (value: any) => {
   return !value || (value && !`${value}`.trim());
@@ -74,7 +78,7 @@ export const register = async (data: User) => {
             id: Number(data.expertise),
           },
         },
-        password: encryptPassword(user.password)
+        password: encryptPassword(user.password),
       } as any,
     });
 
@@ -113,7 +117,7 @@ export const update = async (parent_id: string, role: string, data: any) => {
       };
     }
 
-    if(user.password) {
+    if (user.password) {
       user.password = encryptPassword(user.password);
     }
 
@@ -234,17 +238,17 @@ export const login = async (email: string, password: string) => {
         role: true,
         firstname: true,
         lastname: true,
+        password: true,
       },
       where: {
         email,
-        password,
       },
     });
 
     if (existingUser && checkPassword(existingUser.password, password)) {
       return {
         result: true,
-        ...existingUser,
+        ...clearPassword(existingUser),
         user_id: existingUser.id,
       };
     } else {
