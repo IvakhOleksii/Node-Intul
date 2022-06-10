@@ -22,7 +22,7 @@ const validateUser = ({
   resume,
   linkedin,
   skills,
-  expertise,
+  category,
 }: User) => {
   try {
     if (isNullOrEmpty(firstname) || isNullOrEmpty(lastname))
@@ -37,8 +37,8 @@ const validateUser = ({
     //     return 'linkedin is required';
     // if (isNullOrEmpty(skills))
     //     return 'skill is required';
-    // if (isNullOrEmpty(expertise))
-    //     return 'expertise is required';
+    // if (isNullOrEmpty(category))
+    //     return 'category is required';
   } catch (error) {
     return "something is wrong, please check params";
   }
@@ -51,6 +51,7 @@ export const register = async (data: User) => {
     if (validate) return { result: false, error: validate };
 
     const user = justifyData(data, USERKEYS);
+
     const existing = await isExistUser("email", user.email);
     if (existing) {
       return {
@@ -58,7 +59,9 @@ export const register = async (data: User) => {
         error: `User with ${user.email} exists`,
       };
     }
+
     user.password = encryptPassword(user.password);
+
     const keys = Object.keys(user);
     const values = keys.map((k) => `"""${user[k]}"""`);
 
