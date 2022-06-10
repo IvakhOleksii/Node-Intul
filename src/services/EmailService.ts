@@ -3,7 +3,7 @@ import ejs from 'ejs';
 import sendgrid from '@sendgrid/mail';
 import config from '../config';
 
-export const sendEmail = async (to: string, subject: string, template: string, data: any) => {
+export const sendEmail = async (to: string|string[], subject: string, template: string, data: any) => {
   sendgrid.setApiKey(config.sendgridSecret || '');
   const from = config.mailSenderEmail || "donnie@aerovision.io";
   const html = await ejs.renderFile<string>(path.join(__dirname, `../templates/${template}.ejs`), data);
@@ -44,6 +44,20 @@ export const sendResetPassword = async (to: string, name: string, token: string)
     return true;
   } catch (error: any) {
     console.log('Error during sending invitation');
+    console.log(error);
+    console.log(JSON.stringify(error.response.body));
+    throw error;
+  }
+}
+
+export const sendCandidatesToEmployers = async (candidates: string[], employers_emails: string[]) => {
+  try {
+    await sendEmail(employers_emails, 'List of candidates', 'list-of-candidates', {
+      candidates: candidates,
+    });
+    return true;
+  } catch (error: any) {
+    console.log('Error during sending candidates list to employers');
     console.log(error);
     console.log(JSON.stringify(error.response.body));
     throw error;
