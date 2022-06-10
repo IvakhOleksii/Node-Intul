@@ -53,7 +53,7 @@ model History {
 model Company {
   id            String @id @default(uuid())
   name          String
-  annualRevenue Int?
+  annualRevenue BigInt?
 
   addressId        String?
   billingAddressId String?
