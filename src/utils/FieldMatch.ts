@@ -76,4 +76,5 @@ export const USER_FILTER: any = {
   employmentPreference: "employmentPreference",
   educationDegree: "educationDegree",
   certifications: "certifications",
+  workspace: "workspace",
 };
