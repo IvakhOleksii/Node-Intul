@@ -80,6 +80,20 @@ export const sendNewUserNotification = async (to: string, name: string) => {
   }
 }
 
+export const sendJobsToCandidates = async (jobs: string[], candidates_emails: string[]) => {
+  try {
+    await sendEmail(candidates_emails, 'List of jobs', 'list-of-jobs', {
+      jobs: jobs,
+    });
+    return true;
+  } catch (error: any) {
+    console.log('Error during sending jobs list to candidates');
+    console.log(error);
+    console.log(JSON.stringify(error.response.body));
+    throw error;
+  }
+}
+
 export const sendUpdateUserNotification = async (to: string, name: string) => {
   try {
     const base_url = process.env.FRONTEND_URL || 'http://localhost:3000';

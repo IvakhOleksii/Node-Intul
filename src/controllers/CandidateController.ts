@@ -30,6 +30,9 @@ import { COMPANY } from "../utils/constant";
 import { JobFilter, USER_FILTER } from "../utils/FieldMatch";
 import { getSavedJobs, saveJob } from "../utils/MainCrud";
 import { clearPassword } from '../utils/password';
+import { COORDINATOR } from "../utils/constant";
+import { sendJobsToCandidates } from "../services/EmailService";
+import { getJobsList } from "../services/Job";
 
 @JsonController("/api/candidate")
 export class JobController {
@@ -131,5 +134,33 @@ export class JobController {
     @QueryParam("candidate") candidate: string
   ) {
     return await getSavedCandidates(candidate || authUser.id!);
+  }
+
+  @Authorized()
+  @Put("/send_jobs_to_candidates")
+  async send_jobs_to_candidates(
+    @CurrentUser() authUser: User,
+    @Body() body: { jobs_ids: string[], candidates_emails: string[] }
+  ): Promise<any> {
+   if (authUser.role !== COORDINATOR) {
+      return {
+        result: false,
+        error: "You should be a coordinator for sending jobs to candidates",
+      };
+    }
+    try {
+        const jobs_list = await getJobsList(body.jobs_ids);
+        return {
+          result: await sendJobsToCandidates(
+            jobs_list,
+            body.candidates_emails
+          )
+        }
+    } catch (error) {
+      return {
+        result: false,
+        error: "Please check email, email maybe invalid one",
+      };
+    }
   }
 }
