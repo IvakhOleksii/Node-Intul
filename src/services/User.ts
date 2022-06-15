@@ -286,8 +286,13 @@ export const getStats = async (userId: string) => {
     const savedJobsCountQuery = `SELECT COUNT(*) as count FROM \`${DATASET_MAIN}.${Tables.SAVEDJOBS}\`
                                     WHERE candidate = '${userId}'`;
 
+    const totalJobsCountQuery = `SELECT COUNT(*) as count FROM \`${DATASET_BULLHORN}.${Tables.JOBS}\``;
+
     const savedCompaniesCountQuery = `SELECT COUNT(*) as count FROM \`${DATASET_MAIN}.${Tables.SAVED_COMPANIES}\`
                                         WHERE candidate = '${userId}'`;
+
+    const totalCompaniesCountQuery = `SELECT COUNT(*) as count FROM \`${DATASET_BULLHORN}.${Tables.COMPANIES}\``;
+
 
     const applicationCountPromise = BigQueryService.getClient().query({
       query: applicationCountQuery,
@@ -299,23 +304,43 @@ export const getStats = async (userId: string) => {
       location: "US",
     });
 
+    const totalJobsCountPromise = BigQueryService.getClient().query({
+      query: totalJobsCountQuery,
+      location: "US",
+    });
+
     const savedCompaniesCountPromise = BigQueryService.getClient().query({
       query: savedCompaniesCountQuery,
       location: "US",
     });
 
-    const [[applicationCount], [savedJobsCount], [savedCompaniesCount]] =
+    const totalCompaniesCountPromise = BigQueryService.getClient().query({
+      query: totalCompaniesCountQuery,
+      location: "US",
+    });
+
+    const [
+      [applicationCount],
+      [savedJobsCount],
+      [totalJobsCount],
+      [savedCompaniesCount],
+      [totalCompaniesCount]
+    ] =
       await Promise.all([
         applicationCountPromise,
         savedJobsCountPromise,
+        totalJobsCountPromise,
         savedCompaniesCountPromise,
+        totalCompaniesCountPromise
       ]);
 
     return {
       result: true,
       applicationCount: applicationCount[0].count,
       savedJobsCount: savedJobsCount[0].count,
+      totalJobsCount: totalJobsCount[0].count,
       savedCompaniesCount: savedCompaniesCount[0].count,
+      totalCompaniesCount: totalCompaniesCount[0].count,
       message: null,
     };
   } catch (error) {
@@ -323,7 +348,9 @@ export const getStats = async (userId: string) => {
       result: false,
       applicationCount: null,
       savedJobsCount: null,
+      totalJobsCount: null,
       savedCompaniesCount: null,
+      totalCompaniesCount: null,
       message: error,
     };
   }
