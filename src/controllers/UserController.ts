@@ -14,7 +14,7 @@ import {
 } from "routing-controllers";
 import { BullhornService } from "../services/BullhornService";
 import { sendVerification } from "../services/EmailService";
-import { register, login, update, recovery, getStats, findUserByEmail } from "../services/User";
+import { register, login, update, recovery, getStats, getLandingPageStats, findUserByEmail } from "../services/User";
 import { User } from "../types/User";
 import { COORDINATOR, CANDIDATE, COMPANY, ROLES } from "../utils/constant";
 import { CreateJwtToken, VerifyJwtToken } from "../utils/jwtUtils";
@@ -121,5 +121,10 @@ export class UserController {
   @Get("/stats")
   async stats(@CurrentUser() authUser: User) {
     return await getStats(authUser.id!);
+  }
+
+  @Get("/landing-page-stats")
+  async landingPageStats() {
+    return await getLandingPageStats();
   }
 }
