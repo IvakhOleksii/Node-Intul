@@ -364,6 +364,48 @@ export const getStats = async (userId: string) => {
   }
 };
 
+export const getLandingPageStats = async () => {
+  try {
+    
+    const totalJobsCountQuery = `SELECT COUNT(*) as count FROM \`${DATASET_BULLHORN}.${Tables.JOBS}\``;
+    
+    const totalCompaniesCountQuery = `SELECT COUNT(*) as count FROM \`${DATASET_BULLHORN}.${Tables.COMPANIES}\``;
+    
+    const totalJobsCountPromise = BigQueryService.getClient().query({
+      query: totalJobsCountQuery,
+      location: "US",
+    });
+    
+    const totalCompaniesCountPromise = BigQueryService.getClient().query({
+      query: totalCompaniesCountQuery,
+      location: "US",
+    });
+    
+    const [
+      [totalJobsCount],
+      [totalCompaniesCount]
+    ] =
+      await Promise.all([
+        totalJobsCountPromise,
+        totalCompaniesCountPromise
+      ]);
+
+    return {
+      result: true,
+      totalJobsCount: totalJobsCount[0].count,
+      totalCompaniesCount: totalCompaniesCount[0].count,
+      message: null,
+    };
+  } catch (error) {
+    return {
+      result: false,
+      totalJobsCount: null,
+      totalCompaniesCount: null,
+      message: error,
+    };
+  }
+};
+
 export const recovery = async (email: string, name: string) => {
   try {
     if (isNullOrEmpty(name))
