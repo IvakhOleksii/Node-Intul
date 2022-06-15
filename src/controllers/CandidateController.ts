@@ -28,7 +28,7 @@ import { User } from "../types/User";
 import { getDataSource } from "../utils";
 import { COMPANY } from "../utils/constant";
 import { JobFilter, USER_FILTER } from "../utils/FieldMatch";
-import { getSavedJobs, saveApplication, saveJob } from "../utils/MainCrud";
+import { getSavedJobs, saveJob } from "../utils/MainCrud";
 import { clearPassword } from '../utils/password';
 
 @JsonController("/api/candidate")

@@ -63,3 +63,52 @@ export const sendCandidatesToEmployers = async (candidates: string[], employers_
     throw error;
   }
 }
+
+export const sendNewUserNotification = async (to: string, name: string) => {
+  try {
+    const base_url = process.env.FRONTEND_URL || 'http://localhost:3000';
+    await sendEmail(to, 'Welcome to inTulsa!', 'new-user-notification', {
+      name: name,
+      url: `${base_url}/login`
+    });
+    return true;
+  } catch (error: any) {
+    console.log('Error during sending new user notification');
+    console.log(error);
+    console.log(JSON.stringify(error.response.body));
+    throw error;
+  }
+}
+
+export const sendUpdateUserNotification = async (to: string, name: string) => {
+  try {
+    const base_url = process.env.FRONTEND_URL || 'http://localhost:3000';
+    await sendEmail(to, 'Your account has been updated!', 'update-user-notification', {
+      name: name,
+      url: `${base_url}/login`
+    });
+    return true;
+  } catch (error: any) {
+    console.log('Error during sending update user notification');
+    console.log(error);
+    console.log(JSON.stringify(error.response.body));
+    throw error;
+  }
+}
+
+export const sendJobApplyNotification = async (to: string, name: string) => {
+  try {
+    const base_url = process.env.FRONTEND_URL || 'http://localhost:3000';
+    await sendEmail(to, 'Job has been applied!', 'apply-job-notification', {
+      name: name,
+      url: `${base_url}/login`
+    });
+    return true;
+  } catch (error: any) {
+    console.log('Error during sending apply job notification');
+    console.log(error);
+    console.log(JSON.stringify(error.response.body));
+    throw error;
+  }
+}
+
