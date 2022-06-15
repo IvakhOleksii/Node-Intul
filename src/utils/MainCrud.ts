@@ -2,6 +2,8 @@ import { User } from "../types/User";
 import { BigQueryService } from "../services/BigQueryService";
 import { DATASET_BULLHORN, DATASET_GETRO, DATASET_MAIN, Tables } from "../types/Common";
 import { genUUID, isExistByCondition } from "./";
+import { getUserById } from "../services/User"
+import { sendJobApplyNotification } from "../services/EmailService"
 
 export const saveApplication = async (job: string, candidate: string) => {
     try {
@@ -23,6 +25,10 @@ export const saveApplication = async (job: string, candidate: string) => {
             };
             const [jobBg] = await BigQueryService.getClient().createQueryJob(options);
             await jobBg.getQueryResults();
+            const res = await getUserById(candidate);
+            const user = res.data;
+            if(res.result && user?.email)
+                await sendJobApplyNotification(user.email, user.firstname);
             return {
                 result: true
             };

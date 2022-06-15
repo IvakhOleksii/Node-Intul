@@ -4,7 +4,11 @@ import { DATASET_BULLHORN, DATASET_MAIN, Tables } from "../types/Common";
 import { COORDINATOR, ROLES } from "../utils/constant";
 import { genUUID, isExistByCondition, justifyData } from "../utils";
 import { encryptPassword, checkPassword, clearPassword} from "../utils/password";
-import {sendResetPassword} from "./EmailService"
+import {
+  sendUpdateUserNotification,
+  sendNewUserNotification,
+  sendResetPassword
+  } from "./EmailService"
 import {CreateJwtToken} from "../utils/jwtUtils"
 
 const isNullOrEmpty = (value: any) => {
@@ -51,8 +55,8 @@ export const register = async (data: User) => {
     if (validate) return { result: false, error: validate };
 
     const user = justifyData(data, USERKEYS);
-
     const existing = await isExistUser("email", user.email);
+
     if (existing) {
       return {
         result: false,
@@ -78,6 +82,8 @@ export const register = async (data: User) => {
     };
     const [job] = await BigQueryService.getClient().createQueryJob(options);
     await job.getQueryResults();
+
+    await sendNewUserNotification(user.email, user.firstname || "");
 
     return { result: true };
   } catch (error) {
@@ -108,7 +114,7 @@ export const update = async (parent_id: string, role: string, data: User) => {
     if (!existing) {
       return {
         result: false,
-        error: `User with id=${id} exists`,
+        error: `User with id=${id} doesn't exist`,
       };
     }
 
@@ -153,9 +159,11 @@ export const update = async (parent_id: string, role: string, data: User) => {
     const res = await job.getQueryResults();
 
     const updated = await getUserById(id);
-    clearPassword(updated.data?.[0]);
+    clearPassword(updated.data);
 
-    return { result: true, data: updated };
+    await sendUpdateUserNotification(updated.data.email, updated.data.firstname);
+
+    return { result: true, data: updated.data };
   } catch (error) {
     return { result: false, error };
   }
@@ -173,7 +181,7 @@ export const getUserById = async (id: string) => {
       location: "US",
     };
     const [job] = await BigQueryService.getClient().createQueryJob(options);
-    const res = await job.getQueryResults();
+    const [res] = await job.getQueryResults();
 
     return { result: true, data: res[0] };
   } catch (error) {

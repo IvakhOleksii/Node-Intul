@@ -63,24 +63,24 @@ export class UserController {
       const res = await (
         await BullhornService.getClient()
       ).syncUserTppToBullhorn(user);
+
       if (res && res.changedEntityId) {
         console.log("changedEntityId", res.changedEntityId);
         data = { ...data, externalId: res.changedEntityId };
       }
     }
-    const { result, error } = await register(data);
-    return {
-      result,
-      error,
-    };
+
+    return await register(data);
   }
 
   @Post("/reset-password")
   async setPassword(@Body() body: {token: string, new_password: string} ) {
     const { token, new_password } = body;
     const data = VerifyJwtToken(token);
+
     if(!data)
       return { result: false, error: 'token is invalid' };
+
     const user = await findUserByEmail(data.email);
     if (!user)
       return { result: false, error: 'User does not exist'};
@@ -90,7 +90,7 @@ export class UserController {
     return await update(user.id, user.role, user);
   }
 
-   @Post("/account-recovery")
+  @Post("/account-recovery")
   async accountRecovery(@Body() body: {email: string, name: string} ) {
     const { email, name } = body;
     return await recovery(email, name);
@@ -107,11 +107,8 @@ export class UserController {
         error: "Only coordinators can make registration requests for other coordinators",
       };
     }
-    const { result, error } = await register(data);
-    return {
-      result,
-      error,
-    };
+
+    return await register(data);
   }
 
   @Authorized()
