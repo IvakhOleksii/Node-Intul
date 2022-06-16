@@ -52,7 +52,7 @@ export class JobController {
     const datasource = getDataSource(id);
     if (datasource === DataSource.BULLHORN) {
       const idFilter = {
-        key: "id",
+        key: "jobs_id",
         value: id,
       };
       const job = (
@@ -346,16 +346,18 @@ export class JobController {
         _specialHandlers
       );
 
-      const alias = "bh_jobs";
+      const alias = "jobs";
       const companyAlias = "company";
 
       const _fields = fields?.length
         ? fields.join(", ")
-        : `${alias}.*, ${companyAlias}.bh_url as company_url, ${companyAlias}.name as company_name, ${companyAlias}.logo as company_logo`;
+        : `${alias}.*, ${companyAlias}.bh_url as company_url, ${companyAlias}.name as company_name, ${companyAlias}.logo as company_logo, publishedCategory.id AS publishedCategoryID`;
 
       const _join = `
         LEFT JOIN \`${DATASET_MAIN}.${Tables.JOINED_COMPANIES}\` as ${companyAlias} 
-        ON CONCAT("bl-", ${alias}.clientCorporationID) = ${companyAlias}.bh_id
+          ON CONCAT("bl-", ${alias}.clientCorporationID) = ${companyAlias}.bh_id
+        LEFT JOIN \`${DATASET_BULLHORN}.bh_jobs\` as bh_jobs 
+          ON CONCAT("bl-", bh_jobs.id) = jobs.id
         `;
 
       return await BigQueryService.selectQuery(
