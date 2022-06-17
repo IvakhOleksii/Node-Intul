@@ -14,14 +14,13 @@ import {
 } from "routing-controllers";
 import { BullhornService } from "../services/BullhornService";
 import { sendVerification } from "../services/EmailService";
-import { register, login, update, getStats } from "../services/User";
+import { register, login, update, recovery, getStats, getLandingPageStats, findUserByEmail  } from "../services/User";
 
 import { User, USER_TABLE } from "../types/User";
 
-import { User } from "../types/User";
 import { COORDINATOR, CANDIDATE, COMPANY, ROLES } from "../utils/constant";
 
-import { CreateJwtToken } from "../utils/jwtUtils";
+import { CreateJwtToken, VerifyJwtToken } from "../utils/jwtUtils";
 import { User as DbUser } from "prisma/prisma-client";
 import db from "../utils/db";
 
@@ -88,6 +87,29 @@ export class UserController {
     };
   }
 
+  @Post("/reset-password")
+  async setPassword(@Body() body: {token: string, new_password: string} ) {
+    const { token, new_password } = body;
+    const data = VerifyJwtToken(token);
+
+    if(!data)
+      return { result: false, error: 'token is invalid' };
+
+    const user = await findUserByEmail(data.email);
+    if (!user)
+      return { result: false, error: 'User does not exist'};
+    
+    user.password = new_password;
+
+    return await update(user.id, user.role, user);
+  }
+
+  @Post("/account-recovery")
+  async accountRecovery(@Body() body: {email: string, name: string} ) {
+    const { email, name } = body;
+    return await recovery(email, name);
+  }
+
   @Authorized()
   @Get("/user/history")
   async getHistory(@CurrentUser() authUser: User) {
@@ -118,11 +140,8 @@ export class UserController {
         error: "Only coordinators can make registration requests for other coordinators",
       };
     }
-    const { result, error } = await register(data);
-    return {
-      result,
-      error,
-    };
+
+    return await register(data);
   }
 
   @Authorized()
@@ -135,5 +154,10 @@ export class UserController {
   @Get("/stats")
   async stats(@CurrentUser() authUser: User) {
     return await getStats(authUser.id!);
+  }
+
+  @Get("/landing-page-stats")
+  async landingPageStats() {
+    return await getLandingPageStats();
   }
 }

@@ -41,7 +41,10 @@ export class GetroService {
         try {
             console.log('\n***** getNetworkID *****');
             const url = `${this.api_base_url_v2}/networks`;
+
             const res = await axios.get(url, this.getOptions());
+            await sleep(2000); // https://developers.getro.com/#rate-limit
+
             if (res.status === 200) {
                 const {items} = res.data;
                 if (items.length > 0) {
@@ -72,7 +75,10 @@ export class GetroService {
                     detailed: true
                 });
                 const url = `${this.api_base_url_v1}/collections/${this.networkId}/organizations?${query}`;
+
                 const res = await axios.get(url, this.getOptions());
+                await sleep(2000); // https://developers.getro.com/#rate-limit
+
                 if (res.status === 200) {
                     const { items, meta: { total: total } } = res.data;
                     if (!testMode) {
@@ -108,8 +114,10 @@ export class GetroService {
             detailed: true
         });
         const url = `${this.api_base_url_v1}/organizations/${slug}?${query}`;
+
         const res = await axios.get(url, this.getOptions());
-        await sleep(1000);
+        await sleep(2000); // https://developers.getro.com/#rate-limit
+
         if (res.status === 200) {
             const data = res.data;
             return {
@@ -141,7 +149,10 @@ export class GetroService {
                     'roles[]': 'none'
                 });
                 const url = `${this.api_base_url_v1}/members?${query}`;
+
                 const res = await axios.get(url, this.getOptions());
+                await sleep(2000); // https://developers.getro.com/#rate-limit
+
                 if (res.status === 200) {
                     let result = [];
                     const { items, meta: { total } } = res.data;
@@ -175,8 +186,10 @@ export class GetroService {
             collection_id: this.networkId,
         });
         const url = `${this.api_base_url_v1}/members/${id}?${query}`;
+
         const res = await axios.get(url, this.getOptions());
-        await sleep(1000);
+        await sleep(2000); // https://developers.getro.com/#rate-limit
+
         if (res.status === 200) {
             const data = res.data;
             return {
@@ -222,6 +235,8 @@ export class GetroService {
                     const url = `${this.api_base_url_v1}/jobs?${query}`;
                     try {
                         const res = await axios.get(url, this.getOptions());
+                        await sleep(2000); // https://developers.getro.com/#rate-limit
+
                         const { items, meta: { total } } = res.data;
                         if (!testMode) {
                             const newItems  =items.map((item:any) => ({

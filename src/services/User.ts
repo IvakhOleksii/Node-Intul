@@ -12,6 +12,12 @@ import {
   checkPassword,
   clearPassword,
 } from "../utils/password";
+import {
+  sendUpdateUserNotification,
+  sendNewUserNotification,
+  sendResetPassword
+  } from "./EmailService"
+import {CreateJwtToken} from "../utils/jwtUtils"
 
 const isNullOrEmpty = (value: any) => {
   return !value || (value && !`${value}`.trim());
@@ -28,7 +34,7 @@ const validateUser = ({
   resume,
   linkedin,
   skills,
-  expertise,
+  category,
 }: User) => {
   try {
     if (isNullOrEmpty(firstname) || isNullOrEmpty(lastname))
@@ -43,8 +49,8 @@ const validateUser = ({
     //     return 'linkedin is required';
     // if (isNullOrEmpty(skills))
     //     return 'skill is required';
-    // if (isNullOrEmpty(expertise))
-    //     return 'expertise is required';
+    // if (isNullOrEmpty(category))
+    //     return 'category is required';
   } catch (error) {
     return "something is wrong, please check params";
   }
@@ -62,6 +68,7 @@ export const register = async (data: User) => {
 
     const user = justifyData(data, USERKEYS);
     const existing = await isExistUser("email", user.email);
+
     if (existing) {
       console.log("user exists");
       return {
@@ -83,6 +90,9 @@ export const register = async (data: User) => {
     });
 
     console.log("success");
+
+    await sendNewUserNotification(user.email, user.firstname || "");
+
     return { result: true };
   } catch (error) {
     console.error(error);
@@ -113,7 +123,7 @@ export const update = async (parent_id: string, role: string, data: any) => {
     if (!existing) {
       return {
         result: false,
-        error: `User with id=${id} exists`,
+        error: `User with id=${id} doesn't exist`,
       };
     }
 
@@ -145,8 +155,11 @@ export const update = async (parent_id: string, role: string, data: any) => {
       console.log("could not add user history:", user);
       console.log(err);
     }
+    clearPassword(updated.data);
 
-    return { result: true, data: updated };
+    await sendUpdateUserNotification(updated.data.email, updated.data.firstname);
+
+    return { result: true, data: updated.data };
   } catch (error) {
     return { result: false, error };
   }
@@ -199,7 +212,6 @@ export const getUserById = async (id: string) => {
         id,
       },
     });
-
     return { result: true, data: user };
   } catch (error) {
     return { result: false, error };
@@ -287,8 +299,13 @@ export const getStats = async (userId: string) => {
     const savedJobsCountQuery = `SELECT COUNT(*) as count FROM \`${DATASET_MAIN}.${Tables.SAVEDJOBS}\`
                                     WHERE candidate = '${userId}'`;
 
+    const totalJobsCountQuery = `SELECT COUNT(*) as count FROM \`${DATASET_BULLHORN}.${Tables.JOBS}\``;
+
     const savedCompaniesCountQuery = `SELECT COUNT(*) as count FROM \`${DATASET_MAIN}.${Tables.SAVED_COMPANIES}\`
                                         WHERE candidate = '${userId}'`;
+
+    const totalCompaniesCountQuery = `SELECT COUNT(*) as count FROM \`${DATASET_BULLHORN}.${Tables.COMPANIES}\``;
+
 
     const applicationCountPromise = BigQueryService.getClient().query({
       query: applicationCountQuery,
@@ -300,23 +317,43 @@ export const getStats = async (userId: string) => {
       location: "US",
     });
 
+    const totalJobsCountPromise = BigQueryService.getClient().query({
+      query: totalJobsCountQuery,
+      location: "US",
+    });
+
     const savedCompaniesCountPromise = BigQueryService.getClient().query({
       query: savedCompaniesCountQuery,
       location: "US",
     });
 
-    const [[applicationCount], [savedJobsCount], [savedCompaniesCount]] =
+    const totalCompaniesCountPromise = BigQueryService.getClient().query({
+      query: totalCompaniesCountQuery,
+      location: "US",
+    });
+
+    const [
+      [applicationCount],
+      [savedJobsCount],
+      [totalJobsCount],
+      [savedCompaniesCount],
+      [totalCompaniesCount]
+    ] =
       await Promise.all([
         applicationCountPromise,
         savedJobsCountPromise,
+        totalJobsCountPromise,
         savedCompaniesCountPromise,
+        totalCompaniesCountPromise
       ]);
 
     return {
       result: true,
       applicationCount: applicationCount[0].count,
       savedJobsCount: savedJobsCount[0].count,
+      totalJobsCount: totalJobsCount[0].count,
       savedCompaniesCount: savedCompaniesCount[0].count,
+      totalCompaniesCount: totalCompaniesCount[0].count,
       message: null,
     };
   } catch (error) {
@@ -324,8 +361,72 @@ export const getStats = async (userId: string) => {
       result: false,
       applicationCount: null,
       savedJobsCount: null,
+      totalJobsCount: null,
       savedCompaniesCount: null,
+      totalCompaniesCount: null,
       message: error,
     };
   }
 };
+
+export const getLandingPageStats = async () => {
+  try {
+    
+    const totalJobsCountQuery = `SELECT COUNT(*) as count FROM \`${DATASET_BULLHORN}.${Tables.JOBS}\``;
+    
+    const totalCompaniesCountQuery = `SELECT COUNT(*) as count FROM \`${DATASET_BULLHORN}.${Tables.COMPANIES}\``;
+    
+    const totalJobsCountPromise = BigQueryService.getClient().query({
+      query: totalJobsCountQuery,
+      location: "US",
+    });
+    
+    const totalCompaniesCountPromise = BigQueryService.getClient().query({
+      query: totalCompaniesCountQuery,
+      location: "US",
+    });
+    
+    const [
+      [totalJobsCount],
+      [totalCompaniesCount]
+    ] =
+      await Promise.all([
+        totalJobsCountPromise,
+        totalCompaniesCountPromise
+      ]);
+
+    return {
+      result: true,
+      totalJobsCount: totalJobsCount[0].count,
+      totalCompaniesCount: totalCompaniesCount[0].count,
+      message: null,
+    };
+  } catch (error) {
+    return {
+      result: false,
+      totalJobsCount: null,
+      totalCompaniesCount: null,
+      message: error,
+    };
+  }
+};
+
+export const recovery = async (email: string, name: string) => {
+  try {
+    if (isNullOrEmpty(name))
+      return { result: false, error: 'name is required'};
+
+    const user = await findUserByEmail(email);
+    if(!user)
+      return { result: false, error: 'User does not exist'};
+
+    const token = CreateJwtToken(user.email, '', '', '', '');
+
+    await sendResetPassword(email, name, token);
+
+    return { result: true };
+  } catch (error) {
+    console.log(error)
+    return { result: false, error };
+  }
+}

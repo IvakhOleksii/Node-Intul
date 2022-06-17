@@ -16,7 +16,7 @@ export type User = {
   avatar?: string;
   linkedin?: string;
   skills?: string;
-  expertise?: string;
+  category?: string;
   seniority?: string;
   workspace?: string;
   referredBy?: string;
@@ -65,7 +65,7 @@ export const IUSER = {
   avatar: "",
   linkedin: "",
   skills: "",
-  expertise: "",
+  category: "",
   seniority: "",
   workspace: "",
   referredBy: "",
