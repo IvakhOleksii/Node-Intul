@@ -17,7 +17,7 @@ import db from "../utils/db";
 
 import { JobFilter, USER_FILTER } from "../utils/FieldMatch";
 import { getSavedJobs, saveJob } from "../utils/MainCrud";
-import { clearPassword } from '../utils/password';
+import { clearPassword } from "../utils/password";
 import { COORDINATOR } from "../utils/constant";
 import { sendJobsToCandidates } from "../services/EmailService";
 import { getJobsList } from "../services/Job";
@@ -85,7 +85,7 @@ export class JobController {
         skip: page * count,
       });
 
-      candidates?.forEach(candidate => clearPassword(candidate));
+      candidates?.forEach((candidate) => clearPassword(candidate));
 
       return {
         candidates: candidates || [],
@@ -125,22 +125,19 @@ export class JobController {
   @Put("/send_jobs_to_candidates")
   async send_jobs_to_candidates(
     @CurrentUser() authUser: User,
-    @Body() body: { jobs_ids: string[], candidates_emails: string[] }
+    @Body() body: { jobs_ids: string[]; candidates_emails: string[] }
   ): Promise<any> {
-   if (authUser.role !== COORDINATOR) {
+    if (authUser.role !== COORDINATOR) {
       return {
         result: false,
         error: "You should be a coordinator for sending jobs to candidates",
       };
     }
     try {
-        const jobs_list = await getJobsList(body.jobs_ids);
-        return {
-          result: await sendJobsToCandidates(
-            jobs_list,
-            body.candidates_emails
-          )
-        }
+      const jobs_list = await getJobsList(body.jobs_ids);
+      return {
+        result: await sendJobsToCandidates(jobs_list, body.candidates_emails),
+      };
     } catch (error) {
       return {
         result: false,

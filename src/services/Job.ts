@@ -136,7 +136,7 @@ export const getJobsList = async (jobs_ids: string[]) => {
         },
       },
     });
-    return jobs.map((job) => job.title);
+    return jobs.map((job) => job.title!);
   } catch (error) {
     console.log(error);
     throw error;
