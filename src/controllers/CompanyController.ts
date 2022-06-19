@@ -1,11 +1,8 @@
 import {
-  Controller,
-  Param,
   Body,
   Get,
   Post,
   Put,
-  Delete,
   QueryParam,
   JsonController,
   Authorized,
@@ -14,15 +11,12 @@ import {
 import { BigQueryService } from "../services/BigQueryService";
 import { BullhornService } from "../services/BullhornService";
 import { getSavedCompanies, saveCompany } from "../services/Company";
-import { GetroService } from "../services/GetroService";
 import {
   DATASET_BULLHORN,
   DATASET_GETRO,
   FilterOption,
   Job,
   FilterBody,
-  JobSearchByFilterResponse,
-  JobSearchByID,
   DataSource,
   Tables,
   Company,
@@ -30,11 +24,12 @@ import {
   CompanySearchByFilterResponse,
   DATASET_MAIN,
   ApplyResponse,
-  GetSavedCompaniesResponse,
   Operator,
 } from "../types/Common";
 import { User } from "../types/User";
 import { getDataSource } from "../utils";
+import db from "../utils/db";
+
 import {
   CompanyFilter,
   CompanyFilterKey,
@@ -131,7 +126,7 @@ export class CompanyController {
   async savedCompanies(
     @CurrentUser() authUser: User,
     @QueryParam("candidate") candidate: string
-  ): Promise<GetSavedCompaniesResponse> {
+  ) {
     return await getSavedCompanies(candidate || authUser.id!);
   }
 
@@ -166,18 +161,14 @@ export class CompanyController {
   }
 
   @Post("/search")
-  async searchByFilter(
-    @Body() body: FilterBody
-  ): Promise<CompanySearchByFilterResponse> {
+  async searchByFilter(@Body() body: FilterBody) {
     try {
       const { filters, fields, page, count, operator } = body;
 
-      let companies: Job[] = await this.getCompaniesFromJoinTable(
-        filters,
-        fields,
-        count,
-        operator
-      );
+      const companies = await db.company.findMany({
+        take: count,
+        skip: (count || 0) * (page || 0),
+      });
 
       const response = {
         companies: companies || [],

@@ -1,146 +1,142 @@
-import { User } from "../types/User";
-import { BigQueryService } from "../services/BigQueryService";
-import { DATASET_BULLHORN, DATASET_GETRO, DATASET_MAIN, Tables } from "../types/Common";
-import { genUUID, isExistByCondition } from "./";
-import { getUserById } from "../services/User"
-import { sendJobApplyNotification } from "../services/EmailService"
+import db from "./db";
 
 export const saveApplication = async (job: string, candidate: string) => {
-    try {
-        const condition = `job = '${job}' AND candidate = '${candidate}'`;
-        const dataset = DATASET_MAIN;
-        const table = Tables.APPLICATIONS;
-        const appliedOn = new Date().getTime();
-        const id = genUUID();
-        const existing = await isExistByCondition(condition, dataset, table);
-        if (!existing) {
-            const query = `
-                INSERT INTO \`${dataset}.${table}\` (id, job, candidate, appliedOn)
-                VALUES ('${id}', '${job}', '${candidate}', '${appliedOn}')
-            `;
-            console.log(query);
-            const options = {
-                query: query,
-                location: 'US',
-            };
-            const [jobBg] = await BigQueryService.getClient().createQueryJob(options);
-            await jobBg.getQueryResults();
-            const res = await getUserById(candidate);
-            const user = res.data;
-            if(res.result && user?.email)
-                await sendJobApplyNotification(user.email, user.firstname);
-            return {
-                result: true
-            };
-        }
-        return {
-            result: false,
-            message: 'already applied'
-        };
-    } catch (error) {
-        console.log(error);
-        return { result: false, message: error };
+  try {
+    console.log("applying");
+    const existing = await db.application.findFirst({
+      where: {
+        jobId: job,
+        userId: candidate,
+      },
+    });
+    if (!existing) {
+      const app = await db.application.create({
+        data: {
+          jobId: job,
+          userId: candidate,
+        },
+      });
+
+      console.log({ app });
+
+      return {
+        result: true,
+      };
+    } else {
+      console.log("already applied");
+      return {
+        result: false,
+        message: "already applied",
+      };
     }
-}
+  } catch (error) {
+    console.log(error);
+    return { result: false, message: error };
+  }
+};
 
 export const saveJob = async (job: string, candidate: string) => {
-    try {
-        const condition = `job = '${job}' AND candidate = '${candidate}'`;
-        const dataset = DATASET_MAIN;
-        const table = Tables.SAVEDJOBS;
-        const id = genUUID();
-        const existing = await isExistByCondition(condition, dataset, table);
-        let query = null;
-        if (!existing) {
-            query = `
-                INSERT INTO \`${dataset}.${table}\` (id, job, candidate)
-                VALUES ('${id}', '${job}', '${candidate}')
-            `;
-        } else {
-            query = `
-                DELETE FROM \`${dataset}.${table}\`
-                WHERE ${condition}
-            `;
-        }
-        console.log(query);
-        const options = {
-            query: query,
-            location: 'US',
-        };
-        const [jobBg] = await BigQueryService.getClient().createQueryJob(options);
-        await jobBg.getQueryResults();
-        return {
-            result: true,
-            messsage: existing ? 'unsaved job' : 'saved job'
-        };
-    } catch (error) {
-        console.log(error);
-        return { result: false, message: error };
+  try {
+    console.log("saving job");
+    const existing = await db.user.findFirst({
+      include: {
+        savedJobs: true,
+      },
+      where: {
+        AND: {
+          id: candidate,
+          savedJobs: {
+            some: {
+              id: job,
+            },
+          },
+        },
+      },
+    });
+    if (!existing) {
+      await db.user.update({
+        where: {
+          id: candidate,
+        },
+        data: {
+          savedJobs: {
+            connect: {
+              id: job,
+            },
+          },
+        },
+      });
+    } else {
+      await db.user.update({
+        where: {
+          id: candidate,
+        },
+        data: {
+          savedJobs: {
+            disconnect: {
+              id: job,
+            },
+          },
+        },
+      });
     }
-}
 
-export const getSavedJobs = async (candidate: string) => {
-    try {
-        const condition = `candidate = '${candidate}'`;
-        const datasetMain = DATASET_MAIN;
-        const datasetBullhorn = DATASET_BULLHORN;
-        const datasetGetro = DATASET_GETRO;
-        const savedJobtable = Tables.SAVEDJOBS;
-        const jobTable = Tables.JOBS;
-        const query = `
-            SELECT * 
-            FROM (SELECT job FROM \`${datasetMain}.${savedJobtable}\` WHERE ${condition}) AS savedJob
-            LEFT JOIN \`${datasetBullhorn}.${jobTable}\` AS bullhornJob
-            ON savedJob.job = bullhornJob.id
-            LEFT JOIN \`${datasetGetro}.${jobTable}\` AS getroJob
-            ON savedJob.job = getroJob.id
-        `;
-        console.log(query);
-        const options = {
-            query: query,
-            location: 'US',
-        };
-        const [jobBg] = await BigQueryService.getClient().createQueryJob(options);
-        const [savedJobs] = await jobBg.getQueryResults();
-        return {
-            jobs: savedJobs,
-            result: true
-        };
-    } catch (error) {
-        console.log(error);
-        return { message: error, result: false };
-    }
-}
+    console.log("success");
+    return {
+      result: true,
+      messsage: existing ? "unsaved job" : "saved job",
+    };
+  } catch (error) {
+    console.log(error);
+    return { result: false, message: error };
+  }
+};
 
-export const getCandidatesOnJob = async (job: string) => {
-    try {
-        const condition = `job = '${job}'`;
-        const datasetMain = DATASET_MAIN;
-        const datasetBullhorn = DATASET_BULLHORN;
-        const datasetGetro = DATASET_GETRO;
-        const applicationTable = Tables.APPLICATIONS;
-        const candidateTable = Tables.USER;
-        const query = `
-            SELECT * 
-            FROM (SELECT candidate FROM \`${datasetMain}.${applicationTable}\` WHERE ${condition}) AS applications
-            LEFT JOIN \`${datasetBullhorn}.${candidateTable}\` AS bullhornUser
-            ON applications.candidate = bullhornUser.id
-            LEFT JOIN \`${datasetBullhorn}.${candidateTable}\` AS getroUser
-            ON applications.candidate = getroUser.id
-        `;
-        console.log(query);
-        const options = {
-            query: query,
-            location: 'US',
-        };
-        const [jobBg] = await BigQueryService.getClient().createQueryJob(options);
-        const [candidates] = await jobBg.getQueryResults();
-        return {
-            candidates,
-            result: true
-        };
-    } catch (error) {
-        console.log(error);
-        return { message: error, result: false };
-    }
-}
+export const getSavedJobs = async (candidateId: string) => {
+  try {
+    const candidate = await db.user.findFirst({
+      where: {
+        id: candidateId,
+      },
+      include: {
+        savedJobs: true,
+      },
+    });
+
+    console.log({ candidate });
+
+    return {
+      jobs: candidate?.savedJobs,
+      result: true,
+    };
+  } catch (error) {
+    console.log(error);
+    return { message: error, result: false };
+  }
+};
+
+export const getCandidatesOnJob = async (jobId: string) => {
+  try {
+    const job = await db.job.findFirst({
+      where: {
+        id: jobId,
+      },
+      include: {
+        applications: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+
+    const candidates = job?.applications?.map((app) => app.user);
+    return {
+      candidates,
+      result: true,
+    };
+  } catch (error) {
+    console.log(error);
+    return { message: error, result: false };
+  }
+};

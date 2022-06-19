@@ -1,15 +1,23 @@
-import { User, USERKEYS } from "../types/User";
+import { User, USERKEYS, USER_TABLE } from "../types/User";
 import { BigQueryService } from "./BigQueryService";
 import { DATASET_BULLHORN, DATASET_MAIN, Tables } from "../types/Common";
 import { COORDINATOR, ROLES } from "../utils/constant";
 import { genUUID, isExistByCondition, justifyData } from "../utils";
-import { encryptPassword, checkPassword, clearPassword} from "../utils/password";
+
+import db from "../utils/db";
+
+import { User as dbUser, History as dbHistory } from "prisma/prisma-client";
+import {
+  encryptPassword,
+  checkPassword,
+  clearPassword,
+} from "../utils/password";
 import {
   sendUpdateUserNotification,
   sendNewUserNotification,
-  sendResetPassword
-  } from "./EmailService"
-import {CreateJwtToken} from "../utils/jwtUtils"
+  sendResetPassword,
+} from "./EmailService";
+import { CreateJwtToken } from "../utils/jwtUtils";
 
 const isNullOrEmpty = (value: any) => {
   return !value || (value && !`${value}`.trim());
@@ -51,47 +59,48 @@ const validateUser = ({
 
 export const register = async (data: User) => {
   try {
+    console.log("registering...");
     const validate = validateUser(data);
-    if (validate) return { result: false, error: validate };
+    if (validate) {
+      console.log("failed validation", validate);
+      return { result: false, error: validate };
+    }
 
     const user = justifyData(data, USERKEYS);
     const existing = await isExistUser("email", user.email);
 
     if (existing) {
+      console.log("user exists");
       return {
         result: false,
         error: `User with ${user.email} exists`,
       };
     }
 
-    user.password = encryptPassword(user.password);
+    await db.user.create({
+      data: {
+        ...data,
+        category: {
+          connect: {
+            id: Number(data.category),
+          },
+        },
+        password: encryptPassword(user.password),
+      } as any,
+    });
 
-    const keys = Object.keys(user);
-    const values = keys.map((k) => `"""${user[k]}"""`);
-
-    const query = `
-            INSERT INTO \`${DATASET_MAIN}.${Tables.USER}\` (id, ${keys.join(
-      ", "
-    )})
-            VALUES ("${genUUID()}", ${values.join(", ")})
-        `;
-    console.log(query);
-    const options = {
-      query: query,
-      location: "US",
-    };
-    const [job] = await BigQueryService.getClient().createQueryJob(options);
-    await job.getQueryResults();
+    console.log("success");
 
     await sendNewUserNotification(user.email, user.firstname || "");
 
     return { result: true };
   } catch (error) {
+    console.error(error);
     return { result: false, error };
   }
 };
 
-export const update = async (parent_id: string, role: string, data: User) => {
+export const update = async (parent_id: string, role: string, data: any) => {
   try {
     const user_id = data.id;
     const id = user_id || parent_id;
@@ -110,7 +119,7 @@ export const update = async (parent_id: string, role: string, data: User) => {
       };
     }
 
-    const existing: User | null = await isExistUserFull("id", id);
+    const existing: dbUser | null = await isExistUserFull("id", id);
     if (!existing) {
       return {
         result: false,
@@ -118,72 +127,92 @@ export const update = async (parent_id: string, role: string, data: User) => {
       };
     }
 
-    if(user.password) {
+    if (user.password) {
       user.password = encryptPassword(user.password);
     }
 
-    const keys = Object.keys(user);
-    const values = keys.map((k) => `${k}="""${user[k]}"""`);
-
-    const options = {
-      location: "US",
-    };
-
     if (existing.externalId) {
       try {
-        const bullhornQuery = `
-        UPDATE \`${DATASET_BULLHORN}.${Tables.CANDIDATES}\`
-        SET ${values.join(", ")}
-        WHERE id = '${id}'
-      `;
-        const [job] = await BigQueryService.getClient().createQueryJob({
-          ...options,
-          query: bullhornQuery,
-        });
-        const res = await job.getQueryResults();
+        // TODO: add bullhorn api update here
       } catch (error) {
         console.error("Could not update user in bullhorn", error);
       }
     }
 
-    const query = `
-            UPDATE \`${DATASET_MAIN}.${Tables.USER}\`
-            SET ${values.join(", ")}
-            WHERE id = '${id}'
-        `;
-
-    const [job] = await BigQueryService.getClient().createQueryJob({
-      ...options,
-      query,
+    const updated = await db.user.update({
+      where: {
+        id: existing.id,
+      },
+      data: user,
     });
-    const res = await job.getQueryResults();
 
-    const updated = await getUserById(id);
-    clearPassword(updated.data);
+    try {
+      await addUserHistoryEntries({
+        updatedUser: user,
+        existingUser: existing,
+      });
+    } catch (err) {
+      console.log("could not add user history:", user);
+      console.log(err);
+    }
+    clearPassword(updated);
 
-    await sendUpdateUserNotification(updated.data.email, updated.data.firstname);
+    await sendUpdateUserNotification(updated.email, updated.firstname);
 
-    return { result: true, data: updated.data };
+    return { result: true, data: updated };
   } catch (error) {
     return { result: false, error };
   }
 };
 
+export const addUserHistoryEntries = async ({
+  updatedUser,
+  existingUser,
+}: {
+  updatedUser: Partial<dbUser>;
+  existingUser: dbUser;
+}) => {
+  const batchId = genUUID();
+
+  const historyRecords = Object.keys(updatedUser)
+    .filter((key) => {
+      const typedKey = key as keyof dbUser;
+      const newValue = updatedUser[typedKey];
+      const oldValue = existingUser[typedKey];
+
+      return newValue !== oldValue;
+    })
+    .map((key) => {
+      const typedKey = key as keyof dbUser;
+      return {
+        table: USER_TABLE,
+        recordId: existingUser.id,
+        column: key,
+        oldValue:
+          existingUser[typedKey] != null
+            ? existingUser[typedKey]?.toString()
+            : null,
+        newValue:
+          updatedUser[typedKey] != null
+            ? updatedUser[typedKey]?.toString()
+            : null,
+        batchId,
+      };
+    });
+
+  return await db.history.createMany({
+    data: historyRecords,
+  });
+};
+
 export const getUserById = async (id: string) => {
   try {
-    const query = `
-            SELECT *
-            FROM \`${DATASET_MAIN}.${Tables.USER}\`
-            WHERE id = '${id}'
-        `;
-    const options = {
-      query: query,
-      location: "US",
-    };
-    const [job] = await BigQueryService.getClient().createQueryJob(options);
-    const [res] = await job.getQueryResults();
-
-    return { result: true, data: res[0] };
+    const user = await db.user.findFirst({
+      where: {
+        id,
+      },
+    });
+    return { result: true, data: user };
   } catch (error) {
     return { result: false, error };
   }
@@ -191,20 +220,7 @@ export const getUserById = async (id: string) => {
 
 export const isExistUser = async (field: string, value: string) => {
   try {
-    const query = `
-            SELECT * FROM \`${DATASET_MAIN}.${Tables.USER}\`
-            WHERE ${field}='${value}'
-        `;
-    const options = {
-      query: query,
-      location: "US",
-    };
-    const [job] = await BigQueryService.getClient().createQueryJob(options);
-    const [res] = await job.getQueryResults();
-    if (res && res.length > 0 && res[0][field] === value) {
-      return true;
-    }
-    return false;
+    return (await isExistUserFull(field, value)) != null;
   } catch (error) {
     console.log(error);
     return true;
@@ -213,20 +229,13 @@ export const isExistUser = async (field: string, value: string) => {
 
 export const isExistUserFull = async (field: string, value: string) => {
   try {
-    const query = `
-            SELECT * FROM \`${DATASET_MAIN}.${Tables.USER}\`
-            WHERE ${field}='${value}'
-        `;
-    const options = {
-      query: query,
-      location: "US",
-    };
-    const [job] = await BigQueryService.getClient().createQueryJob(options);
-    const [res] = await job.getQueryResults();
-    if (res && res.length > 0 && res[0][field] === value) {
-      return res[0];
-    }
-    return null;
+    const user = await db.user.findFirst({
+      where: {
+        [field]: value,
+      },
+    });
+
+    return user || null;
   } catch (error) {
     console.log(error);
     return null;
@@ -235,26 +244,29 @@ export const isExistUserFull = async (field: string, value: string) => {
 
 export const login = async (email: string, password: string) => {
   try {
-    const query = `
-            SELECT * FROM \`${DATASET_MAIN}.${Tables.USER}\`
-            WHERE email='${email}'
-        `;
-    const options = {
-      query: query,
-      location: "US",
-    };
-    const [job] = await BigQueryService.getClient().createQueryJob(options);
-    const [res] = await job.getQueryResults();
-    if (res && res.length > 0 && res[0].email === email && checkPassword(res[0].password, password)) {
+    const existingUser = await db.user.findFirst({
+      select: {
+        id: true,
+        role: true,
+        firstname: true,
+        lastname: true,
+        password: true,
+      },
+      where: {
+        email,
+      },
+    });
+
+    if (existingUser && checkPassword(existingUser.password, password)) {
       return {
         result: true,
-        user_id: res[0].id,
-        role: res[0].role,
-        firstname: res[0].firstname,
-        lastname: res[0].lastname,
+        ...clearPassword(existingUser),
+        user_id: existingUser.id,
       };
+    } else {
+      console.log("no existing user");
+      return { result: false, error: "wrong credential" };
     }
-    return { result: false, error: "wrong credential" };
   } catch (error) {
     console.log(error);
     return { result: false, error };
@@ -263,20 +275,13 @@ export const login = async (email: string, password: string) => {
 
 export const findUserByEmail = async (email: string) => {
   try {
-    const query = `
-            SELECT * FROM \`${DATASET_MAIN}.${Tables.USER}\`
-            WHERE email='${email}'
-        `;
-    const options = {
-      query: query,
-      location: "US",
-    };
-    const [job] = await BigQueryService.getClient().createQueryJob(options);
-    const [res] = await job.getQueryResults();
-    if (res && res.length > 0 && res[0].email === email) {
-      return res[0];
-    }
-    return null;
+    const user = await db.user.findFirst({
+      where: {
+        email,
+      },
+    });
+
+    return user || null;
   } catch (error) {
     console.log(error);
     return null;
@@ -300,7 +305,6 @@ export const getStats = async (userId: string) => {
                                         WHERE candidate = '${userId}'`;
 
     const totalCompaniesCountQuery = `SELECT COUNT(*) as count FROM \`${DATASET_BULLHORN}.${Tables.COMPANIES}\``;
-
 
     const applicationCountPromise = BigQueryService.getClient().query({
       query: applicationCountQuery,
@@ -332,15 +336,14 @@ export const getStats = async (userId: string) => {
       [savedJobsCount],
       [totalJobsCount],
       [savedCompaniesCount],
-      [totalCompaniesCount]
-    ] =
-      await Promise.all([
-        applicationCountPromise,
-        savedJobsCountPromise,
-        totalJobsCountPromise,
-        savedCompaniesCountPromise,
-        totalCompaniesCountPromise
-      ]);
+      [totalCompaniesCount],
+    ] = await Promise.all([
+      applicationCountPromise,
+      savedJobsCountPromise,
+      totalJobsCountPromise,
+      savedCompaniesCountPromise,
+      totalCompaniesCountPromise,
+    ]);
 
     return {
       result: true,
@@ -366,29 +369,24 @@ export const getStats = async (userId: string) => {
 
 export const getLandingPageStats = async () => {
   try {
-    
     const totalJobsCountQuery = `SELECT COUNT(*) as count FROM \`${DATASET_BULLHORN}.${Tables.JOBS}\``;
-    
+
     const totalCompaniesCountQuery = `SELECT COUNT(*) as count FROM \`${DATASET_BULLHORN}.${Tables.COMPANIES}\``;
-    
+
     const totalJobsCountPromise = BigQueryService.getClient().query({
       query: totalJobsCountQuery,
       location: "US",
     });
-    
+
     const totalCompaniesCountPromise = BigQueryService.getClient().query({
       query: totalCompaniesCountQuery,
       location: "US",
     });
-    
-    const [
-      [totalJobsCount],
-      [totalCompaniesCount]
-    ] =
-      await Promise.all([
-        totalJobsCountPromise,
-        totalCompaniesCountPromise
-      ]);
+
+    const [[totalJobsCount], [totalCompaniesCount]] = await Promise.all([
+      totalJobsCountPromise,
+      totalCompaniesCountPromise,
+    ]);
 
     return {
       result: true,
@@ -409,19 +407,18 @@ export const getLandingPageStats = async () => {
 export const recovery = async (email: string, name: string) => {
   try {
     if (isNullOrEmpty(name))
-      return { result: false, error: 'name is required'};
+      return { result: false, error: "name is required" };
 
     const user = await findUserByEmail(email);
-    if(!user)
-      return { result: false, error: 'User does not exist'};
+    if (!user) return { result: false, error: "User does not exist" };
 
-    const token = CreateJwtToken(user.email, '', '', '', '');
+    const token = CreateJwtToken(user.email, "", "", "", "");
 
     await sendResetPassword(email, name, token);
 
     return { result: true };
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return { result: false, error };
   }
-}
+};

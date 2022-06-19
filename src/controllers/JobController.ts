@@ -1,3 +1,4 @@
+import { Datasource, Prisma, PrismaClient } from "@prisma/client";
 import {
   Controller,
   Param,
@@ -37,6 +38,7 @@ import { ALLOWED_GETRO_FILTERS } from "../types/Getro";
 import { ALLOWED_JOB_KEYS, JobKey } from "../types/Job";
 import { User } from "../types/User";
 import { getDataSource } from "../utils";
+import db from "../utils/db";
 import { JobFilter } from "../utils/FieldMatch";
 import {
   getCandidatesOnJob,
@@ -45,158 +47,89 @@ import {
   saveJob,
 } from "../utils/MainCrud";
 
+import { Job as DbJob } from "prisma/prisma-client";
+
 @JsonController("/api/job")
 export class JobController {
   @Get("/search")
-  async searchJobByID(@QueryParam("id") id: string): Promise<JobSearchByID> {
-    const datasource = getDataSource(id);
-    if (datasource === DataSource.BULLHORN) {
-      const idFilter = {
-        key: "jobs_id",
-        value: id,
-      };
-      const job = (
-        await this.getJobsByFilterFromBullhorn([idFilter], null, 0, 1)
-      )?.[0];
-      return {
-        job,
-        source: datasource,
-      };
-    } else if (datasource === DataSource.GETRO) {
-      const job = await this.getJobFromGetro(id);
-      return {
-        job,
-        source: datasource,
-      };
-    } else {
-      return {
-        source: DataSource.UNKNOWN,
-        message: "unsupported id",
-      };
+  async searchJobByID(@QueryParam("id") id: string) {
+    try {
+      const job = await db.job.findFirst({
+        where: {
+          id,
+        },
+        include: {
+          getroJobInfo: true,
+          company: true,
+        },
+      });
+
+      console.log({ job });
+
+      if (job) {
+        return {
+          job: {
+            ...(job?.getroJobInfo || {}),
+            ...job,
+            clientCorporation: job.company?.name,
+          },
+        };
+      } else {
+        return null;
+      }
+    } catch (err) {
+      console.error(err);
+      return null;
     }
-  }
-
-  async getJobFromBullhorn(id: string): Promise<Job | undefined> {
-    const fields = "*";
-    const dataset = DATASET_BULLHORN;
-    const table = Tables.JOBS;
-    const condition = `id = '${id}'`;
-    const result = (await BigQueryService.selectQuery(
-      dataset,
-      table,
-      fields,
-      undefined,
-      condition
-    )) as Job[];
-    return result ? result[0] : undefined;
-  }
-
-  async getJobFromGetro(id: string): Promise<Job | undefined> {
-    const fields = "*";
-    const dataset = DATASET_GETRO;
-    const table = Tables.JOBS;
-    const condition = `id = '${id}'`;
-    const result = (await BigQueryService.selectQuery(
-      dataset,
-      table,
-      fields,
-      undefined,
-      condition
-    )) as Job[];
-    return result ? result[0] : undefined;
   }
 
   @Post("/search")
   async searchByFilter(
     @Body() body: FilterBody & { datasource?: DataSources }
-  ): Promise<JobSearchByFilterResponse> {
+  ) {
     try {
-      const { filters, fields, page, count, datasource, operator } = body;
+      const { filters, fields, page, count, datasource } = body;
 
-      const _datasource = datasource ?? "bullhorn";
+      const whereFilters = normalizeFilters(filters);
 
-      const jobsToGet = [];
+      console.log({ filters, whereFilters });
 
-      switch (_datasource) {
-        case "bullhorn":
-          jobsToGet.push(
-            this.getJobsByFilterFromBullhorn(
-              filters,
-              fields,
-              page,
-              count,
-              operator
-            )
-          );
-          break;
-        case "getro":
-          jobsToGet.push(
-            this.getJobsByFilterFromGetro(
-              filters,
-              fields || [],
-              count,
-              operator
-            )
-          );
-          break;
-        case "main":
-          jobsToGet.push(
-            this.getJobsByFilterFromMain(filters, fields || [], count, operator)
-          );
-          break;
-        case "all":
-          jobsToGet.push(
-            this.getJobsByFilterFromBullhorn(
-              filters,
-              fields,
-              page,
-              count,
-              operator
-            )
-          );
-          jobsToGet.push(
-            this.getJobsByFilterFromGetro(
-              filters,
-              fields || [],
-              count,
-              operator
-            )
-          );
-          jobsToGet.push(
-            this.getJobsByFilterFromMain(filters, fields || [], count, operator)
-          );
-          break;
-        default:
-          throw "invalid datasource";
-      }
+      const datasourceToEnum: Dictionary<Datasource> = {
+        main: Datasource.main,
+        bullhorn: Datasource.bullhorn,
+        getro: Datasource.getro,
+      };
 
-      if (_datasource === "all") {
-        const [bullhornJobs, mainJobs, getroJobs] = await Promise.all(
-          jobsToGet
-        );
-        return {
-          bullhorn: {
-            jobs: bullhornJobs || undefined,
-            total: bullhornJobs?.length,
-          },
-          main: {
-            jobs: mainJobs || undefined,
-            total: mainJobs?.length,
-          },
-          getro: {
-            jobs: getroJobs || undefined,
-            total: getroJobs?.length,
-          },
-        };
-      } else {
-        const [jobs] = await Promise.all(jobsToGet);
-        return {
-          jobs: jobs as Job[],
-          total: jobs?.length,
-          message: null,
-        };
-      }
+      const _datasource = datasource ? datasourceToEnum[datasource] : undefined;
+
+      console.log({ count, page });
+      const jobs = await db.job.findMany({
+        where: {
+          datasource: _datasource as any,
+          ...whereFilters,
+        },
+        take: count,
+        skip: (count || 0) * (page || 0),
+        include: {
+          company: true,
+        },
+      }); // TODO: assumes we are changing frontend to pass compatible fields and filters params
+
+      console.log({ jobs });
+
+      return {
+        jobs: jobs.map((job) => {
+          return {
+            ...job,
+            company_name: job.company?.name,
+            company_logo: job.company?.logo,
+          };
+        }),
+        total: jobs?.length,
+        message: null,
+      };
     } catch (error) {
+      console.error(error);
       return {
         message: error,
       };
@@ -242,6 +175,8 @@ export class JobController {
     return conditions.join(` ${operator} `);
   };
 
+
+  @Authorized()
   // TODO: Extract all of these query/filter logic into its own service
   async getJobsByFilterFromMain(
     filters: AdvancedFilterOption[] = [],
@@ -415,9 +350,7 @@ export class JobController {
 
   @Authorized()
   @Get("/savedJobs")
-  async savedJobs(
-    @QueryParam("candidate") candidate: string
-  ): Promise<GetSavedJobsResponse> {
+  async savedJobs(@QueryParam("candidate") candidate: string) {
     return await getSavedJobs(candidate);
   }
 
@@ -427,3 +360,19 @@ export class JobController {
     return await createJob(body);
   }
 }
+
+const normalizeFilters = (filters: any[]) => {
+  const filterObj: any = {};
+  filters.forEach(({ key, value }) => {
+    if (typeof value === "string") {
+      filterObj[key] = {
+        contains: value,
+        mode: "insensitive",
+      };
+    } else {
+      filterObj[key] = value;
+    }
+  });
+
+  return filterObj;
+};
