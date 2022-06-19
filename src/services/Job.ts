@@ -129,22 +129,16 @@ export const updateJob = async (job: Partial<Job> & { id: string }) => {
 
 export const getJobsList = async (jobs_ids: string[]) => {
   try {
-    const dataset = DATASET_MAIN;
-    const table = Tables.JOBS;
-    const query = `
-        SELECT title
-        FROM \`${dataset}.${table}\`
-        WHERE id IN UNNEST(['${jobs_ids.join("','")}']);
-      `;
-    const options = {
-      query,
-      location: "US",
-    };
-    const [job] = await BigQueryService.getClient().createQueryJob(options);
-    const [res] = await job.getQueryResults();
-    return res.map( job => job.title );
+    const jobs = await db.job.findMany({
+      where: {
+        id: {
+          in: jobs_ids,
+        },
+      },
+    });
+    return jobs.map((job) => job.title);
   } catch (error) {
     console.log(error);
     throw error;
   }
- };
+};
