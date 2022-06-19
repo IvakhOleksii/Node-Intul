@@ -399,7 +399,7 @@ model Candidate {
   employeePreference String?
   ethnicity          String?
   experience         String?
-  externalID         String?
+  externalId         String?
   fax                String?
   fax2               String?
   fax3               String?
