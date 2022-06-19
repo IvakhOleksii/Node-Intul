@@ -13,6 +13,8 @@ RUN apk del native-deps
 
 RUN npm run build
 
+RUN npx prisma migrate deploy
+
 EXPOSE 5000
 
 CMD ["npm", "run", "start"]
