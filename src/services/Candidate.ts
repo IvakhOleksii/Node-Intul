@@ -77,20 +77,14 @@ export const getSavedCandidates = async (companyUserId: string) => {
 
 export const getCandidatesList = async (candidates_ids: string[]) => {
   try {
-    const dataset = DATASET_MAIN;
-    const table = Tables.USER;
-    const query = `
-        SELECT email
-        FROM \`${dataset}.${table}\`
-        WHERE id IN UNNEST(['${candidates_ids.join("','")}']);
-      `;
-    const options = {
-      query,
-      location: "US",
-    };
-    const [job] = await BigQueryService.getClient().createQueryJob(options);
-    const [res] = await job.getQueryResults();
-    return res.map( user => user.email );
+    const candidates = await db.user.findMany({
+      where: {
+        id: {
+          in: candidates_ids,
+        },
+      },
+    });
+    return candidates.map((user) => user.email);
   } catch (error) {
     console.log(error);
     throw error;
