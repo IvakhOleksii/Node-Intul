@@ -34,7 +34,7 @@ model Category {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users User[] @relation("userExpertise")
+  users User[] @relation("userCategory")
 }
 
 model History {
@@ -304,8 +304,8 @@ model User {
   linkedin  String?
   skills    String?
 
-  expertiseId Int?
-  expertise   Category? @relation("userExpertise", fields: [expertiseId], references: [id])
+  categoryId Int?
+  category   Category? @relation("userCategory", fields: [categoryId], references: [id])
 
   experienceYears String?
   workspace       String?
