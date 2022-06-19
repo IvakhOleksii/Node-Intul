@@ -14,7 +14,15 @@ import {
 } from "routing-controllers";
 import { BullhornService } from "../services/BullhornService";
 import { sendVerification } from "../services/EmailService";
-import { register, login, update, recovery, getStats, getLandingPageStats, findUserByEmail  } from "../services/User";
+import {
+  register,
+  login,
+  update,
+  recovery,
+  getStats,
+  getLandingPageStats,
+  findUserByEmail,
+} from "../services/User";
 
 import { User, USER_TABLE } from "../types/User";
 
@@ -27,9 +35,7 @@ import db from "../utils/db";
 @Controller()
 export class UserController {
   @Post("/login")
-  async login(
-    @Body() body: { email: string; password: string }
-  ) {
+  async login(@Body() body: { email: string; password: string }) {
     const { email, password } = body;
     const { result, error, ...data } = await login(email, password);
 
@@ -53,7 +59,8 @@ export class UserController {
     if (user.role === COORDINATOR) {
       return {
         result: false,
-        error: "Only coordinators can make registration requests for other coordinators",
+        error:
+          "Only coordinators can make registration requests for other coordinators",
       };
     }
     try {
@@ -80,32 +87,31 @@ export class UserController {
         console.error("error syncing to BH");
         console.error(error);
       }
-    const { result, error } = await register(data);
-    return {
-      result,
-      error,
-    };
+      const { result, error } = await register(data);
+      return {
+        result,
+        error,
+      };
+    }
   }
 
   @Post("/reset-password")
-  async setPassword(@Body() body: {token: string, new_password: string} ) {
+  async setPassword(@Body() body: { token: string; new_password: string }) {
     const { token, new_password } = body;
     const data = VerifyJwtToken(token);
 
-    if(!data)
-      return { result: false, error: 'token is invalid' };
+    if (!data) return { result: false, error: "token is invalid" };
 
     const user = await findUserByEmail(data.email);
-    if (!user)
-      return { result: false, error: 'User does not exist'};
-    
+    if (!user) return { result: false, error: "User does not exist" };
+
     user.password = new_password;
 
     return await update(user.id, user.role, user);
   }
 
   @Post("/account-recovery")
-  async accountRecovery(@Body() body: {email: string, name: string} ) {
+  async accountRecovery(@Body() body: { email: string; name: string }) {
     const { email, name } = body;
     return await recovery(email, name);
   }
@@ -129,15 +135,20 @@ export class UserController {
       console.error(err);
       return null;
     }
+  }
 
   @Post("/register_coordinator")
-  async register_coordinator(@Body() user: User, @CurrentUser() authUser: User) {
+  async register_coordinator(
+    @Body() user: User,
+    @CurrentUser() authUser: User
+  ) {
     let data = { ...user };
 
     if (authUser.role !== COORDINATOR) {
       return {
         result: false,
-        error: "Only coordinators can make registration requests for other coordinators",
+        error:
+          "Only coordinators can make registration requests for other coordinators",
       };
     }
 
