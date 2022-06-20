@@ -137,6 +137,7 @@ export class UserController {
     }
   }
 
+  @Authorized()
   @Post("/register_coordinator")
   async register_coordinator(
     @Body() user: User,
