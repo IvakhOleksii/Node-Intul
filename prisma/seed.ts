@@ -7,7 +7,7 @@ async function main() {
     await Promise.all([
       seedCandidates(),
       seedCompanies().then(seedJobs),
-      seedCategories(),
+      seedCategories().then(seedUsers),
     ]);
     console.log("Done🎉");
   } catch (err) {
@@ -169,6 +169,54 @@ async function seedCompanies() {
         numEmployees: 50,
       },
     ],
+  });
+}
+
+async function seedUsers() {
+  await db.user.createMany({
+    data: [
+      {
+        avatar: "https://picsum.photos/200",
+        email: "coordinator@aerovision.io",
+        firstname: "Coordinator",
+        lastname: "Test",
+        /* Password: 123456 */
+        password: "bd2f141fe5a5ed8b21f9bf0a752221f07e4f0a598419d5371176d19a737524ec3bf87b9b7a9ed4a74181cd25660c354310fd401ca0768f9e58f585e0f061a5554e461414fbcfa9ac3b4773e2",
+        role: "coordinator",
+      },
+      {
+        email: "company@aerovision.io",
+        firstname: "Company",
+        lastname: "Test",
+        /* Password: 123456 */
+        password: "bd2f141fe5a5ed8b21f9bf0a752221f07e4f0a598419d5371176d19a737524ec3bf87b9b7a9ed4a74181cd25660c354310fd401ca0768f9e58f585e0f061a5554e461414fbcfa9ac3b4773e2",
+        role: "company",
+        companyName: "AeroVision",
+        companyURL: "https://www.aerovision.io",
+        annualRevenue: "1000000",
+        numEmployees: "30",
+        avatar: "https://picsum.photos/200",
+      },
+      {
+        firstname: "candidate",
+        lastname: "test",
+        email: "candidate@aerovision.io",
+        /* Password: 123456 */
+        password: "bd2f141fe5a5ed8b21f9bf0a752221f07e4f0a598419d5371176d19a737524ec3bf87b9b7a9ed4a74181cd25660c354310fd401ca0768f9e58f585e0f061a5554e461414fbcfa9ac3b4773e2",
+        city: "aaa",
+        state: "bbb",
+        role: "candidate",
+        roles: "Accounting & Financial Planning, Accounts & Payroll",
+        resume: "resume",
+        seniority: "Mid",
+        linkedin: "linkedin",
+        workspace: "Hybrid",
+        referredBy: "LinkedIn",
+        skills: "javascript, react.js, node.js",
+        categoryId: 1,
+        experience: "0-1"
+      }
+    ]
   });
 }
 
