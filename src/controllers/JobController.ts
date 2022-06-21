@@ -112,6 +112,7 @@ export class JobController {
         skip: (count || 0) * (page || 0),
         include: {
           company: true,
+          category: true,
         },
       }); // TODO: assumes we are changing frontend to pass compatible fields and filters params
 
