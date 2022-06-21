@@ -180,14 +180,16 @@ async function seedUsers() {
         email: "coordinator@aerovision.io",
         firstname: "Coordinator",
         lastname: "Test",
-        password: "123456",
+        /* Password: 123456 */
+        password: "bd2f141fe5a5ed8b21f9bf0a752221f07e4f0a598419d5371176d19a737524ec3bf87b9b7a9ed4a74181cd25660c354310fd401ca0768f9e58f585e0f061a5554e461414fbcfa9ac3b4773e2",
         role: "coordinator",
       },
       {
         email: "company@aerovision.io",
         firstname: "Company",
         lastname: "Test",
-        password: "123456",
+        /* Password: 123456 */
+        password: "bd2f141fe5a5ed8b21f9bf0a752221f07e4f0a598419d5371176d19a737524ec3bf87b9b7a9ed4a74181cd25660c354310fd401ca0768f9e58f585e0f061a5554e461414fbcfa9ac3b4773e2",
         role: "company",
         companyName: "AeroVision",
         companyURL: "https://www.aerovision.io",
@@ -199,7 +201,8 @@ async function seedUsers() {
         firstname: "candidate",
         lastname: "test",
         email: "candidate@aerovision.io",
-        password: "123456",
+        /* Password: 123456 */
+        password: "bd2f141fe5a5ed8b21f9bf0a752221f07e4f0a598419d5371176d19a737524ec3bf87b9b7a9ed4a74181cd25660c354310fd401ca0768f9e58f585e0f061a5554e461414fbcfa9ac3b4773e2",
         city: "aaa",
         state: "bbb",
         role: "candidate",
