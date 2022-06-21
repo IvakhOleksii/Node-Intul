@@ -34,6 +34,7 @@ async function seedJobs() {
         description: "Come join our rockstar team for good money and team",
         datasource: Datasource.main as any,
         status: "active",
+        categoryId: (await db.category.findFirst({ where: { name: "Software & Engineering" } }))!.id,
       },
       {
         title: "Junior Software Engineer",
@@ -49,6 +50,7 @@ async function seedJobs() {
         description: "Come join our rockstar team for good money and learning",
         datasource: Datasource.bullhorn as any,
         status: "active",
+        categoryId: (await db.category.findFirst({ where: { name: "Software & Engineering" } }))!.id,
       },
     ],
   });
@@ -213,7 +215,8 @@ async function seedUsers() {
         workspace: "Hybrid",
         referredBy: "LinkedIn",
         skills: "javascript, react.js, node.js",
-        experience: "0-1"
+        experience: "0-1",
+        categoryId: (await db.category.findFirst({ where: { name: "Finance" } }))!.id,
       }
     ]
   });
