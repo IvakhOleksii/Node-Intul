@@ -7,7 +7,7 @@ async function main() {
     await Promise.all([
       seedCandidates(),
       seedCompanies().then(seedJobs),
-      seedCategories(),
+      seedCategories().then(seedUsers),
     ]);
     console.log("Done🎉");
   } catch (err) {
@@ -169,6 +169,51 @@ async function seedCompanies() {
         numEmployees: 50,
       },
     ],
+  });
+}
+
+async function seedUsers() {
+  await db.user.createMany({
+    data: [
+      {
+        avatar: "https://picsum.photos/200",
+        email: "coordinator@aerovision.io",
+        firstname: "Coordinator",
+        lastname: "Test",
+        password: "123456",
+        role: "coordinator",
+      },
+      {
+        email: "company@aerovision.io",
+        firstname: "Company",
+        lastname: "Test",
+        password: "123456",
+        role: "company",
+        companyName: "AeroVision",
+        companyURL: "https://www.aerovision.io",
+        annualRevenue: "1000000",
+        numEmployees: "30",
+        avatar: "https://picsum.photos/200",
+      },
+      {
+        firstname: "candidate",
+        lastname: "test",
+        email: "candidate@aerovision.io",
+        password: "123456",
+        city: "aaa",
+        state: "bbb",
+        role: "candidate",
+        roles: "Accounting & Financial Planning, Accounts & Payroll",
+        resume: "resume",
+        seniority: "Mid",
+        linkedin: "linkedin",
+        workspace: "Hybrid",
+        referredBy: "LinkedIn",
+        skills: "javascript, react.js, node.js",
+        categoryId: 1,
+        experience: "0-1"
+      }
+    ]
   });
 }
 
