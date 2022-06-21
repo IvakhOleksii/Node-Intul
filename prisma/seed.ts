@@ -213,7 +213,6 @@ async function seedUsers() {
         workspace: "Hybrid",
         referredBy: "LinkedIn",
         skills: "javascript, react.js, node.js",
-        categoryId: 1,
         experience: "0-1"
       }
     ]
