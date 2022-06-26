@@ -24,32 +24,28 @@ export const saveCompanies = async (companies: any[]) => {
     for (const company of companies) {
       try {
         console.log(`Savng company with ID = ${company.id}`);
-        const existing = await isExistByID(
-          `'${company.id}'`,
-          DATASET_BULLHORN,
-          Tables.COMPANIES
-        );
+        const existing = await db.company.findFirst({
+          where: {
+            externalID: company.id,
+          },
+        });
         if (existing) {
           console.log(`Company with ID: ${company.id} exists`);
           return -1;
         }
-        const keys: string[] = Object.keys(company).filter(
-          (k) => expludeFields.indexOf(k) === -1 && !!company[k]
-        );
-        const values = keys.map((k) => `"""${company[k]}"""`);
-        const query = `
-                    INSERT INTO \`${DATASET_BULLHORN}.${
-          Tables.COMPANIES
-        }\` (${keys.join(", ")})
-                    VALUES (${values.join(", ")})
-                `;
-        console.log(query);
-        const options = {
-          query: query,
-          location: "US",
-        };
-        const [job] = await BigQueryService.getClient().createQueryJob(options);
-        await job.getQueryResults();
+
+        const companyData = { ...company };
+
+        Object.keys(companyData).forEach((key) => {
+          if (expludeFields.includes(key)) {
+            delete companyData[key];
+          }
+        });
+
+        const newCompany = await db.company.create({
+          data: companyData,
+        });
+
         console.log(`Saved company with ID = ${company.id} successfully`);
       } catch (error: any) {
         console.log(error.message);
@@ -85,41 +81,34 @@ export const saveJobs = async (jobs: any[]) => {
         console.log(`Savng job with ID = ${job.id}`);
         const parsedJob = parseBullhornJobToMain(job);
         if (parsedJob) {
-          await migrateJobInTPP(parsedJob);
+          // await migrateJobInTPP(parsedJob);
         }
 
-        const existing = await isExistByID(
-          `'${job.id}'`,
-          DATASET_BULLHORN,
-          Tables.JOBS
-        );
+        const existing = await db.job.findFirst({
+          where: {
+            externalId: `bl-${job.id}`,
+          },
+        });
+
         if (existing) {
           console.log(`Job with ID: ${job.id} exists`);
           return -1;
         }
-        const keys: string[] = Object.keys(job).filter(
-          (k) => expludeFields.indexOf(k) === -1 && !!job[k]
-        );
-        const values: any = keys.map((k) => `"""${job[k]}"""`);
-        const query = `
-                    INSERT INTO \`${DATASET_BULLHORN}.${
-          Tables.JOBS
-        }\` (${keys.join(", ")})
-                    VALUES (${values.join(", ")})
-                `;
-        // console.log(query);
-        const options = {
-          query: query,
-          location: "US",
-        };
-        const [bgJob] = await BigQueryService.getClient().createQueryJob(
-          options
-        );
-        await bgJob.getQueryResults();
-        console.log(`Saved job with ID = ${job.id} successfully`);
+        const jobData = { ...job };
+        Object.keys(jobData).forEach((key) => {
+          if (expludeFields.includes(key)) {
+            delete jobData[key];
+          }
+        });
+
+        const newJob = await db.job.create({
+          data: jobData,
+        });
+
+        console.log(`Saved job with ID = ${job.externalId} successfully`);
       } catch (error: any) {
         console.log(error.message);
-        console.log(`ERROR: while saving job with ID = ${job.id}`);
+        console.log(`ERROR: while saving job with ID = ${job.externalId}`);
       }
     }
 
@@ -136,33 +125,26 @@ export const saveClientContacts = async (contacts: any[]) => {
     for (const contact of contacts) {
       try {
         console.log(`\nSavng ClientContact with ID = ${contact.id}`);
-        const existing = await isExistByID(
-          `'${contact.id}'`,
-          DATASET_BULLHORN,
-          Tables.CONTACTS
-        );
+        const existing = await db.clientContact.findFirst({
+          where: {
+            externalID: contact.id,
+          },
+        });
+
         if (existing) {
           console.log(`ClientContact with ID: ${contact.id} exists`);
           return -1;
         }
-        const keys: string[] = Object.keys(contact).filter(
-          (k) => expludeFields.indexOf(k) === -1 && !!contact[k]
-        );
-        const values: any = keys.map((k) => `"""${contact[k]}"""`);
-        const query = `
-                    INSERT INTO \`${DATASET_BULLHORN}.${
-          Tables.CONTACTS
-        }\` (${keys.join(", ")})
-                    VALUES (${values.join(", ")})
-                `;
-        const options = {
-          query: query,
-          location: "US",
-        };
-        const [bgJob] = await BigQueryService.getClient().createQueryJob(
-          options
-        );
-        await bgJob.getQueryResults();
+        const contactData = { ...contact };
+        Object.keys(contactData).forEach((key) => {
+          if (expludeFields.includes(key)) {
+            delete contactData[key];
+          }
+        });
+
+        const newContact = await db.clientContact.create({
+          data: contactData,
+        });
         console.log(`Saved ClientContact with ID = ${contact.id} successfully`);
       } catch (error: any) {
         console.log(error.message);
@@ -185,39 +167,31 @@ export const saveCandidates = async (candidates: any[]) => {
     for (const candidate of candidates) {
       try {
         console.log(`\n\nSavng Candidate with ID = ${candidate.id}`);
-        const parsedUser = parseBullhornCandidateToUser(candidate);
+        const parsedUser = parseBullhornCandidateToUser(candidate) as any;
         if (parsedUser) {
-          await migrateUserInTPP(parsedUser);
+          // await migrateUserInTPP(parsedUser);
         }
 
-        const existing = await isExistByID(
-          `'${candidate.id}'`,
-          DATASET_BULLHORN,
-          Tables.CANDIDATES
-        );
+        const existing = await db.candidate.findFirst({
+          where: {
+            externalId: candidate.id,
+          },
+        });
+
         if (existing) {
           console.log(`Candidate with ID: ${candidate.id} exists`);
           continue;
         }
-        const keys: string[] = Object.keys(candidate).filter(
-          (k) => expludeFields.indexOf(k) === -1 && !!candidate[k]
-        );
-        const values: any = keys.map((k) => `"""${candidate[k]}"""`);
-        const query = `
-                    INSERT INTO \`${DATASET_BULLHORN}.${
-          Tables.CANDIDATES
-        }\` (${keys.join(", ")})
-                    VALUES (${values.join(", ")})
-                `;
-        // console.log(query);
-        const options = {
-          query: query,
-          location: "US",
-        };
-        const [bgJob] = await BigQueryService.getClient().createQueryJob(
-          options
-        );
-        await bgJob.getQueryResults();
+        const candidateData = { ...candidate };
+        Object.keys(candidateData).forEach((key) => {
+          if (expludeFields.includes(key)) {
+            delete candidateData[key];
+          }
+        });
+
+        const newCandidate = await db.candidate.create({
+          data: candidateData,
+        });
         console.log(`Saved Candidate with ID = ${candidate.id} successfully`);
       } catch (error: any) {
         console.log(error.message);
@@ -238,34 +212,25 @@ export const saveLeads = async (leads: any[]) => {
     for (const lead of leads) {
       try {
         console.log(`Savng Lead with ID = ${lead.id}`);
-        const existing = await isExistByID(
-          `'${lead.id}'`,
-          DATASET_BULLHORN,
-          Tables.LEADS
-        );
+        const existing = await db.lead.findFirst({
+          where: {
+            externalId: lead.id,
+          },
+        });
         if (existing) {
           console.log(`Lead with ID: ${lead.id} exists`);
           return -1;
         }
-        const keys: string[] = Object.keys(lead).filter(
-          (k) => expludeFields.indexOf(k) === -1 && !!lead[k]
-        );
-        const values: any = keys.map((k) => `"""${lead[k]}"""`);
-        const query = `
-                    INSERT INTO \`${DATASET_BULLHORN}.${
-          Tables.LEADS
-        }\` (${keys.join(", ")})
-                    VALUES (${values.join(", ")})
-                `;
-        console.log(query);
-        const options = {
-          query: query,
-          location: "US",
-        };
-        const [bgJob] = await BigQueryService.getClient().createQueryJob(
-          options
-        );
-        await bgJob.getQueryResults();
+        const leadData = { ...lead };
+        Object.keys(leadData).forEach((key) => {
+          if (expludeFields.includes(key)) {
+            delete leadData[key];
+          }
+        });
+
+        const newLead = await db.lead.create({
+          data: leadData,
+        });
         console.log(`Saved Lead with ID = ${lead.id} successfully`);
       } catch (error: any) {
         console.log(error.message);

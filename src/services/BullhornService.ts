@@ -11,6 +11,7 @@ import {
 import fs from "fs";
 import { checkForJobFilter, sleep } from "../utils";
 import { User } from "../types/User";
+import { Job } from "prisma/prisma-client";
 
 export class BullhornService {
   public static client: BullhornService | null = null;
@@ -447,39 +448,53 @@ export class BullhornService {
           },
         });
         console.log(url);
+
+        const makeListArray = (val: string | undefined) => {
+          if (!val) return [];
+          return val.replace(", ", ",").split(",");
+        };
         if (res.status === 200) {
           const { data } = res.data;
           total = res.data.total;
-          const updatedData = data.map((d: any) => ({
-            ...d,
-            id: `bl-${d.id}`,
-            address_address1: d.address?.address1 || null,
-            address_address2: d.address?.address2 || null,
-            address_city: d.address?.city || null,
-            address_state: d.address?.state || null,
-            address_zip: d.address?.zip || null,
-            address_country_id: d.address?.countryID || null,
-            location_address1: d.location?.address?.address1 || null,
-            location_address2: d.location?.address?.address2 || null,
-            location_city: d.location?.address?.city || null,
-            location_state: d.location?.address?.state || null,
-            location_state_id: d.location?.address?.stateID || null,
-            location_state_name: d.location?.address?.stateName || null,
-            location_zip: d.location?.address?.zip || null,
-            location_country_id: d.location?.address?.countryID || null,
-            location_country_name: d.location?.address?.countryName || null,
-            location_country_code: d.location?.address?.countryCode || null,
-            clientContact: d.clientContat?.id,
-            clientCorporationID: d.clientCorporation?.id,
-            interviews: d.interviews?.total || 0,
-            owner: d.owner?.id,
-            date_added: d.dateAdded,
-            date_closed: d.dateClosed,
-            date_end: d.date_end,
-            date_last_exported: d.dateLastExported,
-            date_last_modified: d.dateLastModified,
-            date_last_published: d.dateLastPublished,
-          }));
+          console.log("job");
+          console.log(data[0]);
+          const updatedData: Job[] = data.map((d: any) => {
+            const {
+              owner,
+              isClientEditable,
+              feeArrangement,
+              externalID,
+              clientContact,
+              id,
+              ...otherData
+            } = d;
+
+            return {
+              ...otherData,
+              skillList: makeListArray(d.skillList),
+              certificationList: makeListArray(d.certificationList),
+              degreeList: makeListArray(d.degreeList),
+              isPublic: Boolean(d.isPublic),
+              externalId: `bl-${d.id}`,
+              country_id: d.address?.countryID?.toString() || null,
+              address1: d.location?.address?.address1 || null,
+              address2: d.location?.address?.address2 || null,
+              city: d.location?.address?.city || null,
+              state: d.location?.address?.state || null,
+              zip: d.location?.address?.zip || null,
+              clientContactID: d.clientContact?.id.toString(),
+              clientCorporationID: d.clientCorporation?.id.toString(),
+              interviews: d.interviews?.total || 0,
+              ownerID: d.owner?.id?.toString(),
+              dateAdded: d.dateAdded,
+              dateClosed: d.dateClosed,
+              dateEnd: d.date_end,
+              dateLastExported: d.dateLastExported,
+              dateLastModified: d.dateLastModified,
+              dateLastPublished: d.dateLastPublished,
+              datasource: "bullhorn",
+            };
+          });
           if (!testMode) {
             for (const job of updatedData) {
               console.log("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
