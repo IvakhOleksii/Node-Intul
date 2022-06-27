@@ -19,7 +19,7 @@ const setupCronJobs = () => {
   cron.schedule("* 2 * * *", async () => {
     try {
       consoleLog("/// CRON_JOB_STARTED: BULLHORN_GET_JOBS");
-      await (await BullhornService.getClient()).getJobs(runCron, 50);
+      await (await BullhornService.getClient()).getJobs(!runCron, 50);
     } catch (error) {
       consoleLog(error);
     }
