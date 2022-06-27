@@ -340,7 +340,7 @@ enum Datasource {
 
 model Job {
   id             String     @id @default(uuid())
-  externalId     String?
+  externalId     String?    @unique(map: "Job_Unique_ExternalId")
   description    String?
   address1       String?
   address2       String?
