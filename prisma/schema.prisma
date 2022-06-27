@@ -51,6 +51,131 @@ model History {
   createdAt DateTime @default(now())
 }
 
+model Lead {
+  id String @id @default(uuid())
+  externalId String?
+  address_address1 String?
+  address_address2 String?
+  address_city String?
+  address_state String?
+  address_zip String?
+  address_country_id String?
+  campaignSource String?
+  candidates String?
+  category String?
+  clientContacts String?
+  clientCorporation String?
+  comments String?
+  companyName String?
+  companyURL String?
+  conversionSource String?
+  dateAdded DateTime?
+  dateLastComment DateTime?
+  dateLastModified DateTime?
+  dateLastVisited DateTime?
+  description String?
+  division String?
+  email String?
+  email2 String?
+  email3 String?
+  fax String?
+  fax2 String?
+  fax3 String?
+  firstName String?
+  isAnonymized Boolean?
+  isDayLightSavingsTime Boolean?
+  isDeleted Boolean?
+  lastName String?
+  leadSource String?
+  massMailOptOut Boolean?
+  middleName String?
+  mobile String?
+  name String?
+  namePrefix String?
+  nameSuffix String?
+  nickName String?
+  notes String?
+  numEmployees String?
+  occupation String?
+  owner String?
+  ownerCorporation String?
+  pager String?
+  phone String?
+  phone2 String?
+  phone3 String?
+  preferredContact String?
+  primarySkills String?
+  priority String?
+  referredByPerson String?
+  reportToPerson String?
+  role String?
+  salary String?
+  salaryLow String?
+  secondarySkills String?
+  skillSet String?
+  smsOptIn Boolean?
+  specialties String?
+  status String?
+  timeZoneOffsetEST String?
+  type String?
+  willRelocate Boolean?
+  createdAt DateTime @default(now())
+}
+
+model ClientContact {
+  id String @id @default(uuid())
+  address_address1 String?
+  address_address2 String?
+  address_city String?
+  address_state String?
+  address_zip String?
+  address_country_id String?
+  category String?
+  certifications String?
+  clientCorporation String?
+  comments String?
+  dateAdded DateTime?
+  dateLastModified DateTime?
+  dateLastVisit DateTime?
+  description String?
+  desiredCategories String?
+  desiredSkills String?
+  desiredSpecialties String?
+  division String?
+  email String?
+  email2 String?
+  email3 String?
+  externalID String?
+  fax String?
+  fax2 String?
+  fax3 String?
+  firstName String?
+  isAnonymized Boolean?
+  isDayLightSavings Boolean?
+  isDeleted Boolean?
+  lastName String?
+  leads String?
+  middleName String?
+  mobile String?
+  name String?
+  namePrefix String?
+  nameSuffix String?
+  nickName String?
+  numEmployees String?
+  occupation String?
+  office String?
+  owner String?
+  pager String?
+  password String?
+  phone String?
+  phone2 String?
+  phone3 String?
+  preferredContact String?
+  skills String?
+  source String?
+  createdAt DateTime @default(now())
+}
+
 model Company {
   id            String @id @default(uuid())
   name          String
@@ -215,10 +340,13 @@ enum Datasource {
 
 model Job {
   id             String     @id @default(uuid())
-  externalId     String?
+  externalId     String?    @unique(map: "Job_Unique_ExternalId")
   description    String?
   address1       String?
   address2       String?
+  clientCorporationID String?
+  clientContactID String?
+  ownerID        String?
   city           String?
   state          String?
   zip            String?
@@ -226,21 +354,57 @@ model Job {
   employmentType String?
   title          String?
   willRelocate   Boolean?
-  yearsRequired  String?
+  yearsRequired  Int?
   status         String?
-  skillList      String?
+  skillList      String[]
   locations      String?
   companyId      String?
-  interviews     String?
-  onSite         Boolean?
-  salary         String?
+  interviews     Int?
+  onSite         String?
+  salary         BigInt?
   salaryUnit     String?
   startDate      DateTime?
-  type           String?
+  type           Int?
   isDeleted      Boolean?
   postedAt       DateTime?
   hidden         Boolean    @default(false)
   datasource     Datasource @default(main)
+
+  source String?
+  payRate Int?
+  numOpenings Int?
+  markUpPercentage Float?
+  isPublic Boolean?
+  isOpen Boolean?
+  isInterviewRequired Boolean?
+  hoursPerWeek Int?
+  hoursOfOperation String?
+  durationWeeks Int?
+  publicDescription String?
+  reasonClosed String?
+  taxRate Float?
+  taxStatus String?
+  travelRequirements String?
+
+  reportToClientContact String?
+  reportTo String?
+  publishedZip String?
+  isJobcastPublished Boolean?
+  clientBillRate Int?
+
+  educationDegree String?
+  degreeList String[]
+  certificationList String[]
+  bonusPackage String?
+  benefits String?
+  billRateCategoryID Int?
+
+  dateAdded        DateTime?
+  dateClosed       DateTime?
+  dateLastModified DateTime?
+  dateLastExported DateTime?
+  dateEnded        DateTime?
+  dateLastPublished DateTime?
 
   company Company? @relation("jobCompany", fields: [companyId], references: [id])
 
@@ -399,7 +563,7 @@ model Candidate {
   employeePreference String?
   ethnicity          String?
   experience         String?
-  externalID         String?
+  externalId         String?
   fax                String?
   fax2               String?
   fax3               String?

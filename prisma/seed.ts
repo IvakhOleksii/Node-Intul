@@ -4,11 +4,12 @@ import db from "../src/utils/db";
 async function main() {
   try {
     console.log("Seeding...🌱");
-    await Promise.all([
-      seedCandidates(),
-      seedCompanies().then(seedJobs),
-      seedCategories().then(seedUsers),
-    ]);
+    // Some of these are dependent on each other, so we need to run them in order
+    await seedCandidates();
+    await seedCompanies();
+    await seedCategories();
+    await seedJobs();
+    await seedUsers();
     console.log("Done🎉");
   } catch (err) {
     console.error("Error during seed...❌");
@@ -28,13 +29,15 @@ async function seedJobs() {
         city: "Tulsa",
         state: "OK",
         zip: "74008",
-        salary: "160000",
+        salary: 160000,
         employmentType: "fulltime",
-        onSite: true,
+        onSite: "On-Site",
         description: "Come join our rockstar team for good money and team",
         datasource: Datasource.main as any,
         status: "active",
-        categoryId: (await db.category.findFirst({ where: { name: "Software & Engineering" } }))!.id,
+        categoryId: (await db.category.findFirst({
+          where: { name: "Software & Engineering" },
+        }))!.id,
       },
       {
         title: "Junior Software Engineer",
@@ -44,13 +47,15 @@ async function seedJobs() {
         city: "Tulsa",
         state: "OK",
         zip: "74008",
-        salary: "80000",
+        salary: 80000,
         employmentType: "fulltime",
-        onSite: true,
+        onSite: "Hybrid",
         description: "Come join our rockstar team for good money and learning",
         datasource: Datasource.bullhorn as any,
         status: "active",
-        categoryId: (await db.category.findFirst({ where: { name: "Software & Engineering" } }))!.id,
+        categoryId: (await db.category.findFirst({
+          where: { name: "Software & Engineering" },
+        }))!.id,
       },
     ],
   });
@@ -183,7 +188,8 @@ async function seedUsers() {
         firstname: "Coordinator",
         lastname: "Test",
         /* Password: 123456 */
-        password: "bd2f141fe5a5ed8b21f9bf0a752221f07e4f0a598419d5371176d19a737524ec3bf87b9b7a9ed4a74181cd25660c354310fd401ca0768f9e58f585e0f061a5554e461414fbcfa9ac3b4773e2",
+        password:
+          "bd2f141fe5a5ed8b21f9bf0a752221f07e4f0a598419d5371176d19a737524ec3bf87b9b7a9ed4a74181cd25660c354310fd401ca0768f9e58f585e0f061a5554e461414fbcfa9ac3b4773e2",
         role: "coordinator",
       },
       {
@@ -191,7 +197,8 @@ async function seedUsers() {
         firstname: "Company",
         lastname: "Test",
         /* Password: 123456 */
-        password: "bd2f141fe5a5ed8b21f9bf0a752221f07e4f0a598419d5371176d19a737524ec3bf87b9b7a9ed4a74181cd25660c354310fd401ca0768f9e58f585e0f061a5554e461414fbcfa9ac3b4773e2",
+        password:
+          "bd2f141fe5a5ed8b21f9bf0a752221f07e4f0a598419d5371176d19a737524ec3bf87b9b7a9ed4a74181cd25660c354310fd401ca0768f9e58f585e0f061a5554e461414fbcfa9ac3b4773e2",
         role: "company",
         companyName: "AeroVision",
         companyURL: "https://www.aerovision.io",
@@ -204,7 +211,8 @@ async function seedUsers() {
         lastname: "test",
         email: "candidate@aerovision.io",
         /* Password: 123456 */
-        password: "bd2f141fe5a5ed8b21f9bf0a752221f07e4f0a598419d5371176d19a737524ec3bf87b9b7a9ed4a74181cd25660c354310fd401ca0768f9e58f585e0f061a5554e461414fbcfa9ac3b4773e2",
+        password:
+          "bd2f141fe5a5ed8b21f9bf0a752221f07e4f0a598419d5371176d19a737524ec3bf87b9b7a9ed4a74181cd25660c354310fd401ca0768f9e58f585e0f061a5554e461414fbcfa9ac3b4773e2",
         city: "aaa",
         state: "bbb",
         role: "candidate",
@@ -216,9 +224,11 @@ async function seedUsers() {
         referredBy: "LinkedIn",
         skills: "javascript, react.js, node.js",
         experience: "0-1",
-        categoryId: (await db.category.findFirst({ where: { name: "Finance" } }))!.id,
-      }
-    ]
+        categoryId: (await db.category.findFirst({
+          where: { name: "Finance" },
+        }))!.id,
+      },
+    ],
   });
 }
 
