@@ -37,7 +37,7 @@ import {
 import { ALLOWED_GETRO_FILTERS } from "../types/Getro";
 import { ALLOWED_JOB_KEYS, JobKey } from "../types/Job";
 import { User } from "../types/User";
-import { getDataSource } from "../utils";
+import { consoleLog, getDataSource } from "../utils";
 import db from "../utils/db";
 import { JobFilter } from "../utils/FieldMatch";
 import {
@@ -48,6 +48,7 @@ import {
 } from "../utils/MainCrud";
 
 import { Job as DbJob } from "prisma/prisma-client";
+import { BullhornService } from "../services/BullhornService";
 
 @JsonController("/api/job")
 export class JobController {
@@ -80,6 +81,18 @@ export class JobController {
     } catch (err) {
       console.error(err);
       return null;
+    }
+  }
+
+  @Post("/run-job")
+  async runJob(@Body() body: any) {
+    try {
+      consoleLog("/// BULLHORN_GET_JOBS");
+      await (await BullhornService.getClient()).getJobs(true, 50);
+      return { success: true };
+    } catch (error) {
+      consoleLog(error);
+      return { success: false, error };
     }
   }
 
@@ -175,7 +188,6 @@ export class JobController {
     });
     return conditions.join(` ${operator} `);
   };
-
 
   @Authorized()
   // TODO: Extract all of these query/filter logic into its own service
