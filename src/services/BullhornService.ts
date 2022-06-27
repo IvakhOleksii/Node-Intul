@@ -456,8 +456,6 @@ export class BullhornService {
         if (res.status === 200) {
           const { data } = res.data;
           total = res.data.total;
-          console.log("job");
-          console.log(data[0]);
           const updatedData: Job[] = data.map((d: any) => {
             const {
               owner,
