@@ -451,7 +451,7 @@ export class BullhornService {
 
         const makeListArray = (val: string | undefined) => {
           if (!val) return [];
-          return val.replace(", ", ",").split(",");
+          return val?.toString().replace(", ", ",").split(",");
         };
         if (res.status === 200) {
           const { data } = res.data;
