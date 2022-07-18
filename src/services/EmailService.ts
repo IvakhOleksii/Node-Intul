@@ -124,5 +124,20 @@ export const sendJobApplyNotification = async (to: string, name: string) => {
     console.log(JSON.stringify(error.response.body));
     throw error;
   }
+};
+
+export const sendEmailJobAlertToUser = async (to: string, name: string, jobs: string[]) => {
+  try {
+    await sendEmail(to, 'New jobs for you from inTulsa', 'job-alert', {
+      name: name,
+      jobs: jobs,
+    });
+    return true;
+  } catch (error: any) {
+    console.log('Error during sending job alert');
+    console.log(error);
+    console.log(JSON.stringify(error.response.body));
+    throw error;
+  }
 }
 

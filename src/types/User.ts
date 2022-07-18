@@ -45,6 +45,8 @@ export type User = {
   occupation?: string;
 
   employmentPreference?: string;
+
+  settingsSendJobAlert?: boolean;
 };
 
 export const IUSER = {
@@ -90,6 +92,7 @@ export const IUSER = {
   disability: "",
   occupation: "",
   employmentPreference: "",
+  settingsSendJobAlert: "",
 };
 
 export const USERKEYS = Object.keys(IUSER);

@@ -10,7 +10,12 @@ import {
 } from "routing-controllers";
 import { BigQueryService } from "../services/BigQueryService";
 import { BullhornService } from "../services/BullhornService";
-import { getSavedCompanies, saveCompany } from "../services/Company";
+import { 
+  getSavedCompanies, 
+  saveCompany,
+  getClientContactList
+} from "../services/Company";
+
 import {
   DATASET_BULLHORN,
   DATASET_GETRO,
@@ -64,6 +69,14 @@ export class CompanyController {
         message: "unsupported id",
       };
     }
+  }
+
+  @Authorized()
+  @Get("/client_contact_list")
+  async clientContactList(
+    @QueryParam("id") id: string
+  ): Promise<any> {
+    return await getClientContactList(id);
   }
 
   @Authorized()

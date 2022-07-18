@@ -1,7 +1,8 @@
-import cron from "node-cron";
-import { BullhornService } from "../services/BullhornService";
-import { GetroService } from "../services/GetroService";
-import { consoleLog } from "../utils";
+import cron from 'node-cron';
+import { BullhornService } from '../services/BullhornService';
+import { GetroService } from '../services/GetroService';
+import { consoleLog } from '../utils';
+import { sendJobAlerts } from '../services/Job'
 
 const runCron = process.env.ENABLE_CRON === "true";
 

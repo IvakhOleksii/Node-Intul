@@ -5,6 +5,7 @@ import {
   JobKey,
   ALLOWED_JOB_KEYS_TO_UPDATE,
 } from "../types/Job";
+import { getUsersForJobAlerts, sendJobAlertToUser } from "./User";
 import db from "../utils/db";
 
 export const createJob = async (job: Job) => {
@@ -142,3 +143,33 @@ export const getJobsList = async (jobs_ids: string[]) => {
     throw error;
   }
 };
+
+export const getSuitableJobs = async (userSkills: string | null) => {
+  if(!userSkills || userSkills === '')
+    return [];
+  try {
+    const userSkillsArray = userSkills.replace(/\s+/g, '').replace(/,/g, '|');
+
+    const jobs = await db.job.findMany({
+      where: {
+        skillList: {
+          search: userSkillsArray,
+        },
+      },
+    });
+
+    return jobs;
+  } catch (error) {
+    console.log(error);
+    return [];
+  }
+};
+
+export const sendJobAlerts = async () => {
+   const users = await getUsersForJobAlerts();
+
+   for (const user of users){
+     const jobs = await getSuitableJobs(user.skills);
+     await sendJobAlertToUser(user, jobs);
+   }
+}

@@ -634,6 +634,46 @@ export class BullhornService {
     }
   }
 
+  async getClientContactsById(companyId: string): Promise<any> {
+    let repeatErr = 0;
+
+    while (repeatErr < 3) {
+      try {
+        const query = queryString.stringify({
+          BhRestToken: this.BhRestToken,
+          fields: [
+            "id",
+            "email",
+            "firstName",
+            "lastName",
+          ].join(","),
+        });
+        const url = `${this.restUrl}entity/ClientCorporation/${companyId}/clientContacts?${query}`;
+
+        const res = await axios.get(url, {
+          headers: {
+            "Content-Type": "application/json;charset=UTF-8",
+            Accept: "*/*",
+          },
+        });
+        if (res.status === 200) {
+          const { data } = res.data;
+          return data;
+        } else if (res.status === 404) {
+          return [];
+        } else {
+          console.log(url);
+          throw "error";
+        }
+      } catch (error: any) {
+        console.log(error.message, "\nrepeatNumber =", repeatErr);
+        await this.getNewAccessToken();
+        repeatErr++;
+      }
+    }
+    return [];
+  }
+
   async getCandidates(
     testMode = false,
     count = 150,

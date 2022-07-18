@@ -3,6 +3,7 @@ import { BigQueryService } from "./BigQueryService";
 import { DATASET_BULLHORN, DATASET_MAIN, Tables } from "../types/Common";
 import { COORDINATOR, ROLES } from "../utils/constant";
 import { genUUID, isExistByCondition, justifyData } from "../utils";
+import { Job } from "../types/Job";
 
 import db from "../utils/db";
 
@@ -16,6 +17,7 @@ import {
   sendUpdateUserNotification,
   sendNewUserNotification,
   sendResetPassword,
+  sendEmailJobAlertToUser
 } from "./EmailService";
 import { CreateJwtToken } from "../utils/jwtUtils";
 
@@ -422,3 +424,26 @@ export const recovery = async (email: string, name: string) => {
     return { result: false, error };
   }
 };
+
+export const getUsersForJobAlerts = async () => {
+   try {
+    const users = await db.user.findMany({
+      where: {
+        settingsSendJobAlert: true,
+        role: 'candidate'
+      },
+    });
+    return users;
+  } catch (error) {
+    console.log(error);
+    return [];
+  }
+};
+
+export const sendJobAlertToUser = async (user: any, jobs: Array<any>) => {
+  await sendEmailJobAlertToUser(
+    user.email,
+    user.firstname || '',
+    jobs.map( (job: any) => job.title )
+  );
+}
